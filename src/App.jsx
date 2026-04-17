@@ -143,15 +143,24 @@ export default function App() {
       return;
     }
 
-    const latestDate = new Date('2026-03-31'); // Max date from data
+    const calculateDates = () => {
+      if (!rawData.tickets || rawData.tickets.length === 0) {
+        return { latest: new Date('2026-03-31'), maxStr: '2026-03-31' };
+      }
+      const maxStr = rawData.tickets.reduce((max, t) => t.date > max ? t.date : max, rawData.tickets[0].date);
+      const [year, month, day] = maxStr.split('-').map(Number);
+      return { latest: new Date(year, month - 1, day), maxStr };
+    };
+
+    const { latest: latestDate, maxStr: maxDateString } = calculateDates();
     let start = new Date(latestDate);
     
     if (interval === '7D') start.setDate(latestDate.getDate() - 7);
     if (interval === '30D') start.setDate(latestDate.getDate() - 30);
-    if (interval === 'Ano Atual') start = new Date('2026-01-01');
+    if (interval === 'Ano Atual') start = new Date(latestDate.getFullYear(), 0, 1);
 
     setStartDate(start.toISOString().split('T')[0]);
-    setEndDate(latestDate.toISOString().split('T')[0]);
+    setEndDate(maxDateString);
   };
 
   // Filtering Logic
@@ -179,16 +188,47 @@ export default function App() {
     const avgWait = filteredTickets.reduce((acc, t) => acc + t.wait, 0) / (total || 1);
     const avgTotal = filteredTickets.reduce((acc, t) => acc + t.total, 0) / (total || 1);
     const users = Array.from(new Set(filteredTickets.map(t => t.user)));
-    return { total, avgWait, avgTotal, uniqueUsers: users.length };
+    
+    // CSAT Global (Para filtros aplicados usando Média Ponderada)
+    const csatWeights = {
+      'Muito Satisfeito': 100,
+      'Satisfeito': 75,
+      'Indiferente': 50,
+      'Insatisfeito': 25
+    };
+    
+    const rated = filteredTickets.filter(t => t.csat && csatWeights[t.csat] !== undefined);
+    const totalScore = rated.reduce((sum, t) => sum + csatWeights[t.csat], 0);
+    const csatScore = rated.length > 0 ? (totalScore / rated.length) : 0;
+
+    return { total, avgWait, avgTotal, uniqueUsers: users.length, csatScore };
   }, [filteredTickets]);
 
   // Section 1: Atendimento
   const agentPerf = useMemo(() => {
-    const counts = filteredTickets.reduce((acc, t) => {
-      acc[t.agent] = (acc[t.agent] || 0) + 1;
+    const csatWeights = {
+      'Muito Satisfeito': 100,
+      'Satisfeito': 75,
+      'Indiferente': 50,
+      'Insatisfeito': 25
+    };
+
+    const agentStats = filteredTickets.reduce((acc, t) => {
+      if (!acc[t.agent]) acc[t.agent] = { count: 0, rated: 0, totalScore: 0 };
+      acc[t.agent].count++;
+      
+      if (t.csat && csatWeights[t.csat] !== undefined) {
+        acc[t.agent].rated++;
+        acc[t.agent].totalScore += csatWeights[t.csat];
+      }
       return acc;
     }, {});
-    return Object.entries(counts).sort((a,b) => b[1] - a[1]).slice(0, 10).map(([name, count]) => ({ name, count }));
+    
+    return Object.entries(agentStats).sort((a,b) => b[1].count - a[1].count).slice(0, 10).map(([name, data]) => ({ 
+      name, 
+      count: data.count,
+      "CSAT (%)": data.rated > 0 ? parseFloat((data.totalScore / data.rated).toFixed(1)) : 0
+    }));
   }, [filteredTickets]);
 
   const topCategories = useMemo(() => {
@@ -586,7 +626,7 @@ export default function App() {
                 </div>
                 <div className="card card-green animate-fade">
                   <div className="card-label">CSAT</div>
-                  <div className="card-value value-green">98.2%</div>
+                  <div className="card-value value-green">{metrics.csatScore.toFixed(1)}%</div>
                 </div>
               </div>
 

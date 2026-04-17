@@ -7,7 +7,14 @@ from datetime import datetime, timedelta
 from playwright.async_api import async_playwright
 from dotenv import load_dotenv
 
+import sys
+import io
+
 load_dotenv()
+
+# Configuração para evitar erro de encoding no Windows (charmap)
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # Configurações
 ATHENAS_URL = "https://sanpaolo.athenas.me"
@@ -57,37 +64,28 @@ async def download_report():
             print("Login efetuado com sucesso.")
 
             # 2. Navegação: Relatórios -> Detalhado
-            # Nota: Os seletores aqui são baseados na descrição do fluxo
-            # Pode ser necessário ajustar se os IDs/textos forem diferentes
-            await page.get_by_text("Relatórios", exact=True).click()
-            await page.get_by_text("detalhado", exact=True).click()
+            print("Navegando para Relatórios Detalhados...")
+            # O seletor button.btn-relatorio:not([id]) evita conflito com outros botões de menu
+            await page.click("button.btn-relatorio:not([id])")
+            await page.click("a#menuDetailedReports")
             
             # 3. Filtro de Datas
-            # Calculando intervalo (ex: últimos 7 dias)
+            start_date = "02/07/2025"
             today = datetime.now().strftime("%d/%m/%Y")
-            start_date = (datetime.now() - timedelta(days=30)).strftime("%d/%m/%Y")
-            
             print(f"Filtrando intervalo: {start_date} até {today}")
             
-            # Seletores de data (ajustar conforme realidade do portal)
-            # Geralmente são inputs com classes de datepicker
-            # Vou tentar localizar por label ou placeholder se possível
-            try:
-                # Exemplo genérico de preenchimento de datas
-                inputs = await page.query_selector_all("input[type='text']")
-                for inp in inputs:
-                    val = await inp.get_attribute("placeholder")
-                    if val and ("data" in val.lower() or "início" in val.lower()):
-                        await inp.fill(start_date)
-                    if val and ("fim" in val.lower() or "até" in val.lower()):
-                        await inp.fill(today)
-            except:
-                print("Aviso: Falha ao preencher datas automaticamente pelos placeholders.")
+            await page.fill("#detailed-report-initial-date", start_date)
+            await page.fill("#detailed-report-finish-date", today)
+            
+            # 4. Gerar Relatório
+            print("Gerando relatório...")
+            await page.click("button:has-text('Gerar')")
+            await page.wait_for_selector(".btn-exports-reports-excell", state="visible", timeout=60000)
 
-            # 4. Exportar
+            # 5. Exportar para Excel
             print("Solicitando exportação para Excel...")
             async with page.expect_download() as download_info:
-                await page.get_by_text("Exportar para Excel", exact=True).click()
+                await page.click(".btn-exports-reports-excell")
             
             download = await download_info.value
             
