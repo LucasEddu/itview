@@ -280,6 +280,28 @@ export default function App() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [tvSlideIndex, setTvSlideIndex] = useState(0);
+  const [tvScale, setTvScale] = useState(1);
+
+  // Resolution-independent scaling for TV Presentation Mode (scales 1920x1080 design to fit any screen size natively)
+  useEffect(() => {
+    if (!isTvMode) return;
+    
+    const handleResize = () => {
+      const designWidth = 1920;
+      const designHeight = 1080;
+      const scaleX = window.innerWidth / designWidth;
+      const scaleY = window.innerHeight / designHeight;
+      // Fit completely inside the screen (contain mode)
+      const scale = Math.min(scaleX, scaleY);
+      setTvScale(scale);
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isTvMode]);
 
   // Synchronize isTvMode with browser fullscreen state (e.g. if user exits with ESC)
   useEffect(() => {
@@ -1189,6 +1211,10 @@ export default function App() {
                <Search size={14} style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
             </div>
           </div>
+          
+          <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'center', fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.4)', fontWeight: 600 }}>
+            Desenvolvido por<br/><strong style={{ color: 'white' }}>Lucas Eduardo Moura Santos</strong>
+          </div>
         </div>
       </aside>
 
@@ -1259,7 +1285,7 @@ export default function App() {
             </div>
 
                          {(!isTvMode || tvSlideIndex === 0) && (
-<div className="tv-slide animate-fade">
+<div className="tv-slide animate-fade" style={isTvMode ? { transform: `scale(${tvScale})` } : {}}>
 {/* SECTION 0: VISÃO GERAL */}
              <div className="section-header">
                 <div className="section-prefix">
@@ -1665,7 +1691,7 @@ export default function App() {
             </div>
 )}
 {(!isTvMode || tvSlideIndex === 1) && (
-<div className="tv-slide animate-fade" style={{ paddingTop: isTvMode ? "2rem" : 0 }}>
+<div className="tv-slide animate-fade" style={isTvMode ? { transform: `scale(${tvScale})` } : {}}>
 {/* SECTION 1: VOLUME POR CHAMADOS */}
             <div className="section-header" style={{ borderTop: '1px solid var(--border-dim)', paddingTop: '2.5rem' }}>
                <div className="section-prefix">
@@ -1791,7 +1817,7 @@ export default function App() {
             </div>
 )}
 {(!isTvMode || tvSlideIndex === 2) && (
-<div className="tv-slide animate-fade" style={{ paddingTop: isTvMode ? "2rem" : 0 }}>
+<div className="tv-slide animate-fade" style={isTvMode ? { transform: `scale(${tvScale})` } : {}}>
 {/* SECTION 2: SATISFAÇÃO & SLA */}
             <div className="section-header" style={{ borderTop: '1px solid var(--border-dim)', paddingTop: '2.5rem' }}>
                <div className="section-prefix">
@@ -1929,7 +1955,7 @@ export default function App() {
                         </div>
 )}
 {(!isTvMode || tvSlideIndex === 3) && (
-<div className="tv-slide animate-fade" style={{ paddingTop: isTvMode ? "2rem" : 0 }}>
+<div className="tv-slide animate-fade" style={isTvMode ? { transform: `scale(${tvScale})` } : {}}>
 {/* SECTION 3: CHAMADOS POR USUÁRIO */}
             <div className="section-header" style={{ borderTop: '1px solid var(--border-dim)', paddingTop: '2.5rem' }}>
                <div className="section-prefix">
@@ -2161,6 +2187,11 @@ export default function App() {
             </div>
           </div>
         )}
+        {!isTvMode && (
+          <footer style={{ marginTop: '4rem', padding: '1.5rem 0 0 0', borderTop: '1px solid var(--border-dim)', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600 }}>
+            Desenvolvido por <strong style={{ color: 'var(--text-primary)' }}>Lucas Eduardo Moura Santos</strong>
+          </footer>
+        )}
       </main>
 
 
@@ -2259,6 +2290,11 @@ export default function App() {
         <button className="tv-exit-button" onClick={() => setIsTvMode(false)} style={{ position: 'fixed', top: '2rem', right: '2rem', background: 'var(--brand-red)', border: 'none', color: 'white', padding: '0.8rem 1.5rem', borderRadius: '8px', cursor: 'pointer', zIndex: 50, fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(218,13,23,0.3)' }}>
           <X size={16} /> SAIR DO MODO TV
         </button>
+      )}
+      {isTvMode && (
+        <div style={{ position: 'fixed', bottom: '1.5rem', right: '2.5rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.05em', zIndex: 50 }}>
+          Desenvolvido por <strong style={{ color: 'rgba(255,255,255,0.7)' }}>Lucas Eduardo Moura Santos</strong>
+        </div>
       )}
     </>
   );

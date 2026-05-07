@@ -699,25 +699,35 @@ input:checked + .slider:before { transform: translateX(16px); }
    TV PRESENTATION MODE SCALING (NO EMPTY SPACE)
    ========================================================================== */
 .main-content.is-tv-mode {
-  padding: 4.5rem 6.5rem !important;
+  padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
+  align-items: center !important;
   min-height: 100vh !important;
   height: 100vh !important;
+  width: 100vw !important;
   overflow: hidden !important;
   background: var(--bg-dark) !important;
+  position: relative !important;
 }
 
 /* Centered presentation layout */
 .is-tv-mode .tv-slide {
-  width: 100% !important;
-  max-width: 1550px !important;
-  margin: 0 auto !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 1920px !important;
+  height: 1080px !important;
+  margin-top: -540px !important;
+  margin-left: -960px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  flex: 1 !important;
+  padding: 4.5rem 6.5rem !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  flex: none !important;
 }
 
 /* Bigger Section Headers */
