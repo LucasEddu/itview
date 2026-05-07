@@ -1707,7 +1707,7 @@ export default function App() {
                   {/* Chamados por Atendente */}
                   <div className="card">
                      <div className="card-label">Chamados por Atendente</div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 480 : 340}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 300 : 340}>
                         <BarChart data={agentPerf} layout="vertical" margin={{ left: 20, right: 30 }}>
                            <XAxis type="number" hide />
                            <YAxis dataKey="name" type="category" stroke="var(--text-dim)" fontSize={10} width={100} />
@@ -1723,7 +1723,7 @@ export default function App() {
                   {/* Visão Mensal */}
                   <div className="card">
                      <div className="card-label">Visão Mensal (Total vs Média Diária)</div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 480 : 340}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 300 : 340}>
                         <ComposedChart data={monthlyData} margin={{ top: 40, right: 20, left: -20, bottom: 20 }}>
                            <XAxis 
                              dataKey="label" 
@@ -1770,7 +1770,7 @@ export default function App() {
                   {/* Visão Semanal */}
                   <div className="card">
                      <div className="card-label">Visão Semanal (Média Diária)</div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 380 : 260}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 240 : 260}>
                         <BarChart data={trendData}>
                            <XAxis dataKey="label" stroke="var(--text-dim)" fontSize={10} axisLine={false} tickLine={false} />
                            <YAxis hide />
@@ -1839,7 +1839,7 @@ export default function App() {
                         <span style={{ fontWeight: 700, textTransform: 'uppercase' }}>Distribuição CSAT</span> 
                         <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>— CSAT {metrics.csatScore.toFixed(1)}%</span>
                      </div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 400 : 280}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 280 : 280}>
                          <RePieChart>
                             <Pie
                                data={csatData}
@@ -1869,7 +1869,7 @@ export default function App() {
                         <span style={{ fontWeight: 700, textTransform: 'uppercase' }}>TMA por Atendente</span> 
                         <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>— Média em Minutos</span>
                      </div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 400 : 280}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 280 : 280}>
                         <BarChart data={avgTimeByAgent} layout="vertical" margin={{ left: 20 }}>
                            <XAxis type="number" hide />
                            <YAxis dataKey="name" type="category" stroke="var(--text-dim)" fontSize={10} width={100} />
@@ -1906,7 +1906,7 @@ export default function App() {
                         </div>
                         Média de Satisfação (CSAT %)
                      </div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 380 : 260}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 240 : 260}>
                         <AreaChart data={evolution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                            <defs>
                               <linearGradient id="colorCsat" x1="0" y1="0" x2="0" y2="1">
@@ -1932,7 +1932,7 @@ export default function App() {
                         </div>
                         Tempo Médio Mensal (TMA min)
                      </div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 380 : 260}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 240 : 260}>
                         <AreaChart data={evolution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                            <defs>
                               <linearGradient id="colorTime" x1="0" y1="0" x2="0" y2="1">
@@ -1999,7 +1999,7 @@ export default function App() {
                         <span style={{ fontWeight: 700, textTransform: 'none' }}>Top 10 Usuários</span>
                         <span style={{ color: 'var(--text-dim)', fontWeight: 400, textTransform: 'none' }}>(volume)</span>
                      </div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 550 : 400}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 400 : 400}>
                         <BarChart data={userRanking.slice(0, 10)} layout="vertical" margin={{ left: 20 }}>
                            <XAxis type="number" hide />
                            <YAxis dataKey="name" type="category" stroke="var(--text-dim)" fontSize={10} width={100} />
@@ -2243,7 +2243,7 @@ export default function App() {
                      <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Folder size={14} color="var(--brand-orange)" /> Áreas Mais Abertas
                      </div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 380 : 260}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 240 : 260}>
                         <BarChart data={selectedUserStats.topCategories} layout="vertical" margin={{ left: 20 }}>
                            <XAxis type="number" hide />
                            <YAxis dataKey="name" type="category" stroke="var(--text-dim)" fontSize={9} width={120} />
@@ -2256,7 +2256,7 @@ export default function App() {
                      <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <TrendingUp size={14} color="var(--brand-blue)" /> Histórico de Volume
                      </div>
-                     <ResponsiveContainer width="100%" height={isTvMode ? 380 : 260}>
+                     <ResponsiveContainer width="100%" height={isTvMode ? 240 : 260}>
                         <AreaChart data={selectedUserStats.history} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                            <defs>
                               <linearGradient id="colorHistory" x1="0" y1="0" x2="0" y2="1">

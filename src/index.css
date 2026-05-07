@@ -724,7 +724,7 @@ input:checked + .slider:before { transform: translateX(16px); }
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  padding: 4.5rem 6.5rem !important;
+  padding: 1.5rem 4.5rem !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
   flex: none !important;
@@ -733,8 +733,8 @@ input:checked + .slider:before { transform: translateX(16px); }
 /* Bigger Section Headers */
 .is-tv-mode .section-header {
   margin-top: 0 !important;
-  margin-bottom: 2.2rem !important;
-  transform: scale(1.22) !important;
+  margin-bottom: 1.25rem !important;
+  transform: scale(1.08) !important;
   transform-origin: left center !important;
 }
 
@@ -753,9 +753,9 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 /* Bigger Cards and Paddings */
 .is-tv-mode .card {
-  padding: 2rem 2.2rem !important;
+  padding: 1.15rem 1.4rem !important;
   border-radius: 14px !important;
-  min-height: 165px !important;
+  min-height: 120px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
@@ -766,7 +766,7 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 /* Card Titles */
 .is-tv-mode .card-label {
-  font-size: 1.15rem !important;
+  font-size: 0.95rem !important;
   font-weight: 700 !important;
   letter-spacing: 0.04em !important;
   color: var(--text-secondary) !important;
@@ -774,7 +774,7 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 /* Card Values (Big & Impactful) */
 .is-tv-mode .card-value {
-  font-size: 3.4rem !important;
+  font-size: 2.5rem !important;
   font-weight: 800 !important;
   line-height: 1.1 !important;
   margin: 0.6rem 0 !important;
@@ -809,7 +809,7 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 .is-tv-mode .rank-item div[style*="fontSize: '0.85rem'"],
 .is-tv-mode .rank-item div[style*="font-size"] {
-  font-size: 1.15rem !important;
+  font-size: 0.95rem !important;
 }
 
 .is-tv-mode .rank-item div[style*="fontSize: '0.7rem'"] {
