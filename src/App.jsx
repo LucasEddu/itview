@@ -931,6 +931,22 @@ export default function App() {
     }).sort((a, b) => b.id - a.id);
   }, [rawData.tickets]);
 
+  // Calculate real-time pending vs being-attended metrics from openTickets
+  const { emAtendimento, naFila } = useMemo(() => {
+    let emAtendimento = 0;
+    let naFila = 0;
+    openTickets.forEach(t => {
+      const agentLower = (t.agent || '').toLowerCase();
+      const isUnassigned = !t.agent || agentLower === 'não atribuído' || agentLower === 'sistema' || agentLower === '';
+      if (isUnassigned) {
+        naFila++;
+      } else {
+        emAtendimento++;
+      }
+    });
+    return { emAtendimento, naFila };
+  }, [openTickets]);
+
   // Operational Metrics: Calculate today's real-time productivity aggregates (Brasília/Fortaleza Time)
   const dailyAgentMetrics = useMemo(() => {
     const todayStr = new Date().toLocaleDateString('pt-BR', {
@@ -1454,7 +1470,49 @@ export default function App() {
                 }}>
                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-red)', display: 'inline-block' }} className="animate-pulse"></span>
                    {openTickets.length} EM ABERTO
-                </div>
+                 </div>
+
+                 {/* Sub-indicadores de Fila (Atendimento vs Pendente) */}
+                 <div style={{
+                   background: 'rgba(38, 93, 124, 0.12)',
+                   color: 'var(--brand-blue)',
+                   padding: '4px 10px',
+                   borderRadius: '12px',
+                   fontSize: '0.65rem',
+                   fontWeight: 800,
+                   display: 'flex',
+                   alignItems: 'center',
+                   gap: '6px',
+                   marginLeft: '8px',
+                   border: '1px solid rgba(38, 93, 124, 0.2)'
+                 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-blue)', display: 'inline-block' }}></span>
+                    {emAtendimento} EM ATENDIMENTO
+                 </div>
+
+                 <div style={{
+                   background: naFila > 0 ? 'rgba(218, 85, 19, 0.15)' : 'rgba(79, 112, 67, 0.12)',
+                   color: naFila > 0 ? 'var(--brand-orange)' : 'var(--brand-green)',
+                   padding: '4px 10px',
+                   borderRadius: '12px',
+                   fontSize: '0.65rem',
+                   fontWeight: 800,
+                   display: 'flex',
+                   alignItems: 'center',
+                   gap: '6px',
+                   marginLeft: '8px',
+                   border: naFila > 0 ? '1px solid rgba(218, 85, 19, 0.3)' : '1px solid rgba(79, 112, 67, 0.2)',
+                   boxShadow: naFila > 0 ? '0 0 8px rgba(218, 85, 19, 0.2)' : 'none'
+                 }}>
+                    <span style={{ 
+                      width: 6, 
+                      height: 6, 
+                      borderRadius: '50%', 
+                      background: naFila > 0 ? 'var(--brand-orange)' : 'var(--brand-green)', 
+                      display: 'inline-block' 
+                    }} className={naFila > 0 ? 'animate-pulse' : ''}></span>
+                    {naFila} AGUARDANDO ATENDENTE (PENDENTE)
+                 </div>
                 <div className="section-line"></div>
              </div>
 
