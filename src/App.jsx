@@ -232,8 +232,8 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
-    // Auto-refresh data every 60 seconds for real-time dashboard updates
-    const interval = setInterval(fetchData, 60000);
+    // Auto-refresh data every 10 seconds for real-time dashboard updates
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -1514,18 +1514,17 @@ export default function App() {
                     ) : (
                       <div style={{ 
                         display: 'flex', 
-                        flexDirection: 'row', 
-                        gap: '0.85rem', 
-                        overflowX: 'auto', 
-                        paddingBottom: '0.65rem',
+                        flexDirection: 'column', 
+                        gap: '0.75rem', 
+                        maxHeight: '235px',
+                        overflowY: 'auto', 
+                        paddingRight: '0.25rem',
                         scrollBehavior: 'smooth',
                         WebkitOverflowScrolling: 'touch',
                         flex: 1
-                      }} className="custom-horizontal-scrollbar">
+                      }} className="custom-vertical-scrollbar">
                         {openTickets.map((ticket, i) => (
                           <div key={i} style={{
-                            flex: '0 0 calc(50% - 0.425rem)',
-                            minWidth: '280px',
                             borderLeft: '4px solid var(--brand-red)',
                             padding: '0.75rem 0.85rem',
                             background: 'rgba(255, 255, 255, 0.01)',
@@ -1536,7 +1535,8 @@ export default function App() {
                             flexDirection: 'column',
                             justifyContent: 'space-between',
                             gap: '0.5rem',
-                            fontSize: '0.75rem'
+                            fontSize: '0.75rem',
+                            width: '100%'
                           }}>
                             {/* Header row */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
