@@ -1,176 +1,271 @@
 import os
-import asyncio
-import random
-import json
-import pandas as pd
-from datetime import datetime, timedelta
-from playwright.async_api import async_playwright
-from dotenv import load_dotenv
-
 import sys
 import io
+import json
+import requests
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configuração para evitar erro de encoding no Windows (charmap)
+# Prevent encoding errors in Windows terminals
 if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-# Configurações
-ATHENAS_URL = "https://sanpaolo.athenas.me"
+# Credentials & API endpoints
 EMAIL = os.getenv("ATHENAS_EMAIL")
 PASSWORD = os.getenv("ATHENAS_PASSWORD")
-DOWNLOAD_DIR = r"C:\Users\Lucas.moura\Downloads\Dados\dadosBI"
-EXCEL_FILE_NAME = "Relatório Detalhado.xlsx"
-EXCEL_PATH = os.path.join(DOWNLOAD_DIR, EXCEL_FILE_NAME)
+BASE_URL = "https://sanpaolo.api-atendimento.athenas.online"
+DATA_FILE_PATH = os.path.join('src', 'assets', 'data.json')
 
-def time_to_seconds(time_str):
-    if pd.isna(time_str) or not isinstance(time_str, str):
-        return 0
+def get_token():
+    if not EMAIL or not PASSWORD:
+        raise ValueError("Erro: Credenciais ATHENAS_EMAIL ou ATHENAS_PASSWORD ausentes no arquivo .env")
+        
+    print(f"Autenticando API para o usuário: {EMAIL}...")
+    url = f"{BASE_URL}/auth"
+    payload = {'email': EMAIL, 'password': PASSWORD}
+    
+    response = requests.post(url, json=payload, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+    response.raise_for_status()
+    
+    data = response.json()
+    token = data.get('token')
+    if not token:
+        raise ValueError("Erro: Token não retornado no corpo da resposta da autenticação.")
+    print("Autenticação realizada com sucesso!")
+    return token
+
+def get_ratings(token):
+    print("Buscando avaliações de satisfação (CSAT)...")
+    url = f"{BASE_URL}/SupportRatings/report"
+    headers = {
+        'User-Agent': 'Mozilla/5.0',
+        'Authorization': f"Bearer {token}"
+    }
+    
+    response = requests.get(url, headers=headers, timeout=20)
+    response.raise_for_status()
+    
+    data = response.json()
+    rows = data.get('rows', [])
+    print(f"Total de {len(rows)} avaliações carregadas.")
+    
+    # Map supportId to textual CSAT
+    ratings_map = {}
+    csat_mapping = {
+        '3': 'Muito Satisfeito',
+        '2': 'Satisfeito',
+        '1': 'Indiferente',
+        '0': 'Insatisfeito'
+    }
+    
+    for r in rows:
+        support_id = r.get('supportId')
+        rate = str(r.get('rate', '')).strip()
+        if support_id and rate in csat_mapping:
+            ratings_map[int(support_id)] = csat_mapping[rate]
+            
+    return ratings_map
+
+def fetch_tickets(token, days=30):
+    start_dt = datetime.now() - timedelta(days=days)
+    date_initial = start_dt.strftime("%Y-%m-%d")
+    date_finish = datetime.now().strftime("%Y-%m-%d")
+    
+    print(f"Buscando chamados de {date_initial} até {date_finish}...")
+    url = f"{BASE_URL}/report/generateFull"
+    payload = {
+        "sectors": [],
+        "users": [],
+        "dateInitial": date_initial,
+        "dateFinish": date_finish
+    }
+    headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+        'Authorization': f"Bearer {token}"
+    }
+    
+    response = requests.post(url, json=payload, headers=headers, timeout=30)
+    response.raise_for_status()
+    
+    tickets = response.json()
+    print(f"{len(tickets)} chamados retornados pela API.")
+    return tickets
+
+def parse_iso_datetime(s):
+    if not s:
+        return None
     try:
-        parts = time_str.split(':')
-        if len(parts) == 3:
-            h, m, s = map(int, parts)
-            return h * 3600 + m * 60 + s
-        elif len(parts) == 2:
-            m, s = map(int, parts)
-            return m * 60 + s
-        return 0
-    except:
-        return 0
+        # Expected format: "2026-04-02T19:44:17.000Z"
+        return datetime.strptime(s.split('.')[0].replace('Z', ''), '%Y-%m-%dT%H:%M:%S')
+    except Exception as e:
+        print(f"Erro ao converter data '{s}': {e}")
+        return None
 
-def map_csat(total_seconds):
-    if total_seconds < 1800: return random.choice(['Muito Satisfeito'] * 8 + ['Satisfeito'] * 2)
-    elif total_seconds < 7200: return random.choice(['Satisfeito'] * 7 + ['Muito Satisfeito'] * 2 + ['Indiferente'] * 1)
-    elif total_seconds < 28800: return random.choice(['Indiferente'] * 6 + ['Satisfeito'] * 2 + ['Insatisfeito'] * 2)
-    else: return random.choice(['Insatisfeito'] * 5 + ['Indiferente'] * 5)
-
-async def download_report():
-    print(f"Iniciando automação no portal: {ATHENAS_URL}")
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True) # Headless por padrão
-        context = await browser.new_context(accept_downloads=True)
-        page = await context.new_page()
-
-        try:
-            # 1. Login
-            await page.goto(ATHENAS_URL)
-            await page.fill("#email", EMAIL)
-            await page.fill("#password", PASSWORD)
-            await page.click("#goodLogin")
-            
-            # Aguardar dashboard carregar
-            await page.wait_for_load_state("networkidle")
-            print("Login efetuado com sucesso.")
-
-            # 2. Navegação: Relatórios -> Detalhado
-            print("Navegando para Relatórios Detalhados...")
-            # O seletor button.btn-relatorio:not([id]) evita conflito com outros botões de menu
-            await page.click("button.btn-relatorio:not([id])")
-            await page.click("a#menuDetailedReports")
-            
-            # 3. Filtro de Datas
-            start_date = "02/07/2025"
-            today = datetime.now().strftime("%d/%m/%Y")
-            print(f"Filtrando intervalo: {start_date} até {today}")
-            
-            await page.fill("#detailed-report-initial-date", start_date)
-            await page.fill("#detailed-report-finish-date", today)
-            
-            # 4. Gerar Relatório
-            print("Gerando relatório...")
-            await page.click("button:has-text('Gerar')")
-            await page.wait_for_selector(".btn-exports-reports-excell", state="visible", timeout=60000)
-
-            # 5. Exportar para Excel
-            print("Solicitando exportação para Excel...")
-            async with page.expect_download() as download_info:
-                await page.click(".btn-exports-reports-excell")
-            
-            download = await download_info.value
-            
-            # Garantir que a pasta existe
-            if not os.path.exists(DOWNLOAD_DIR):
-                os.makedirs(DOWNLOAD_DIR)
-                
-            await download.save_as(EXCEL_PATH)
-            print(f"Download concluído: {EXCEL_PATH}")
-
-        except Exception as e:
-            print(f"Erro durante a automação: {e}")
-            raise e
-        finally:
-            await browser.close()
-
-def process_data():
-    print("Iniciando processamento dos dados salvos...")
+def process_sync():
     try:
-        df = pd.read_excel(EXCEL_PATH)
-        df['Abertura_dt'] = pd.to_datetime(df['Abertura'], format='%d/%m/%Y, %H:%M', errors='coerce')
-        df['Atendente'] = df['Atendente'].fillna('Não Atribuído').astype(str)
-        df['Setor'] = df['Setor'].fillna('Não Informado').astype(str)
-        df['Empresa'] = df['Empresa'].fillna('N/A').astype(str)
-        df['Contato'] = df['Contato'].fillna('Desconhecido').astype(str)
-        df['wait'] = df['Tempo na Fila'].apply(time_to_seconds)
-        df['total'] = df['Tempo'].apply(time_to_seconds)
-        df['csat'] = df['total'].apply(map_csat)
+        # 1. Authenticate and fetch API data
+        token = get_token()
+        ratings_map = get_ratings(token)
+        api_tickets = fetch_tickets(token, days=30)
+        
+        # 2. Load existing data
+        existing_data = {"tickets": [], "agents": [], "sectors": []}
+        if os.path.exists(DATA_FILE_PATH):
+            try:
+                with open(DATA_FILE_PATH, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+                print(f"Carregados {len(existing_data.get('tickets', []))} registros históricos.")
+            except Exception as e:
+                print(f"Aviso: Não foi possível carregar dados existentes ({e}). Iniciando do zero.")
 
-        records = []
-        for _, row in df.iterrows():
-            agent = str(row['Atendente']).strip()
-            total_seconds = int(row['total'])
-            
-            if agent in ['Não Atribuído', 'Sistema', ''] or total_seconds == 0:
+        # Build map of existing tickets to allow in-place updates of open tickets
+        tickets_map = {int(t['id']): t for t in existing_data.get('tickets', []) if 'id' in t}
+        
+        new_count = 0
+        updated_count = 0
+        
+        # 3. Process tickets from API
+        for t in api_tickets:
+            ticket_id = int(t.get('id', 0))
+            if ticket_id == 0:
                 continue
-
-            dt = row['Abertura_dt']
-            date_str = dt.strftime('%Y-%m-%d') if pd.notna(dt) else ""
-            month_str = dt.strftime('%Y-%m') if pd.notna(dt) else ""
-            hour = dt.hour if pd.notna(dt) else -1
-            weekday = dt.weekday() if pd.notna(dt) else -1
+                
+            status_obj = t.get('Status')
+            status_name = status_obj.get('name', 'Finalizado') if status_obj else 'Finalizado'
             
-            records.append({
-                "id": int(row['id']) if pd.notna(row['id']) else 0,
+            # Map agent details safely
+            user_obj = t.get('User')
+            agent = str(user_obj.get('name', 'Não Atribuído')).strip().title() if user_obj else 'Não Atribuído'
+            
+            # Skip system/unassigned messages for standard KPIs (but keep them if they are open for real-time tracking)
+            # Wait, the frontend App.jsx filters out 'Não Atribuído' / 'Sistema' or total=0 for standard charts.
+            # So we can keep them in tickets list for our open-tickets view, but make sure we map them!
+            if agent in ['', 'Nan']:
+                agent = 'Não Atribuído'
+                
+            sector_obj = t.get('Sector')
+            sector = sector_obj.get('name', 'Não Informado') if sector_obj else 'Não Informado'
+            
+            contact_obj = t.get('Contact')
+            company = str(contact_obj.get('company', 'N/A')).strip().upper() if contact_obj else 'N/A'
+            contact_name = str(contact_obj.get('name', 'Desconhecido')).strip().title() if contact_obj else 'Desconhecido'
+            
+            if company in ['', 'NAN']:
+                company = 'N/A'
+            if contact_name in ['', 'NAN']:
+                contact_name = 'Desconhecido'
+                
+            # Process timestamps & durations
+            created_at = parse_iso_datetime(t.get('createdAt'))
+            start_support_at = parse_iso_datetime(t.get('startSupportAt'))
+            updated_at = parse_iso_datetime(t.get('updatedAt'))
+            
+            # Compute Wait Time (in queue)
+            wait_seconds = 0
+            if start_support_at and created_at:
+                wait_seconds = int((start_support_at - created_at).total_seconds())
+                if wait_seconds < 0:
+                    wait_seconds = 0
+                    
+            # Compute Total Time (resolution)
+            total_seconds = 0
+            if status_name == 'Finalizado' and updated_at and created_at:
+                total_seconds = int((updated_at - created_at).total_seconds())
+                if total_seconds < 0:
+                    total_seconds = 0
+                    
+            # Date/time components based on creation date
+            date_str = ""
+            month_str = ""
+            hour = -1
+            weekday = -1
+            
+            if created_at:
+                date_str = created_at.strftime('%Y-%m-%d')
+                month_str = created_at.strftime('%Y-%m')
+                hour = created_at.hour
+                weekday = created_at.weekday()
+                
+            # Categorize based on Sector
+            sector_upper = sector.upper()
+            if "SUPORTE TECNICO -> ATHENAS" in sector_upper:
+                main_category = "ATHENAS"
+            elif any(x in sector_upper for x in ["DEGUST", "RESHOP"]):
+                main_category = "PDV"
+            elif any(x in sector_upper for x in ["TRILOGO", "EMAIL", "PCP", "TEMPER"]):
+                main_category = "SISTEMAS"
+            else:
+                main_category = "OUTROS"
+                
+            # CSAT mapping
+            csat_val = ratings_map.get(ticket_id, 'Sem Avaliação')
+            
+            ticket_obj = {
+                "id": ticket_id,
                 "agent": agent,
-                "sector": row['Setor'],
-                "company": row['Empresa'],
-                "user": row['Contato'],
-                "wait": int(row['wait']),
+                "sector": sector,
+                "main_category": main_category,
+                "company": company,
+                "user": contact_name,
+                "wait": wait_seconds,
                 "total": total_seconds,
                 "date": date_str,
                 "month": month_str,
                 "hour": hour,
                 "weekday": weekday,
-                "csat": row['csat']
-            })
-
+                "csat": csat_val,
+                "status": status_name, # Extra field for real-time tracking
+                "created_at": t.get('createdAt') # ISO timestamp for frontend calculations
+            }
+            
+            # Insert or update
+            if ticket_id in tickets_map:
+                # Update existing ticket (especially if it transitioned from open to closed, or changed agent)
+                existing_ticket = tickets_map[ticket_id]
+                # Only update if the existing ticket is not finalized, or if we want to refresh fields
+                if existing_ticket.get('status') != 'Finalizado' or status_name == 'Finalizado':
+                    tickets_map[ticket_id] = ticket_obj
+                    updated_count += 1
+            else:
+                # Insert new ticket
+                tickets_map[ticket_id] = ticket_obj
+                new_count += 1
+                
+        # 4. Convert map back to list and sort by date descending
+        merged_records = list(tickets_map.values())
+        merged_records.sort(key=lambda x: (x['date'], x['id']), reverse=True)
+        
+        # 5. Load store locations if available
+        stores = existing_data.get('stores', [])
+        if os.path.exists('stores_locations.json'):
+            try:
+                with open('stores_locations.json', 'r', encoding='utf-8') as f:
+                    stores = json.load(f)
+            except:
+                print("Aviso: Falha ao carregar stores_locations.json")
+                
+        # 6. Save compiled JSON
         output_data = {
-            "tickets": records,
-            "agents": sorted(list(set(r['agent'] for r in records))),
-            "sectors": sorted(list(set(r['sector'] for r in records))),
+            "tickets": merged_records,
+            "agents": sorted(list(set(r['agent'] for r in merged_records if r['agent'] not in ['Não Atribuído', 'Sistema']))),
+            "sectors": sorted(list(set(r['sector'] for r in merged_records))),
+            "categories": ["ATHENAS", "PDV", "SISTEMAS", "OUTROS"],
+            "stores": stores,
             "last_updated": datetime.now().strftime('%d/%m/%Y, %H:%M:%S')
         }
         
-        with open('src/assets/data.json', 'w', encoding='utf-8') as f:
-            json.dump(output_data, f, ensure_ascii=False)
+        os.makedirs(os.path.dirname(DATA_FILE_PATH), exist_ok=True)
+        with open(DATA_FILE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(output_data, f, ensure_ascii=False, indent=2)
             
-        print(f"Dashboard atualizado com {len(records)} registros efetivos.")
-
+        print(f"Dashboard sincronizado via API. Novos: {new_count} | Atualizados: {updated_count} | Total: {len(merged_records)} chamados.")
+        
     except Exception as e:
-        print(f"Erro no processamento: {e}")
+        print(f"Erro no processamento da sincronização API: {e}")
         raise e
 
-async def main():
-    try:
-        if not EMAIL or not PASSWORD:
-            print("Erro: Credenciais não encontradas no arquivo .env")
-            return
-            
-        await download_report()
-        process_data()
-        print("Sincronização concluída com sucesso!")
-    except Exception as e:
-        print(f"Falha na sincronização: {e}")
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    process_sync()

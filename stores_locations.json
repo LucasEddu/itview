@@ -1,0 +1,562 @@
+[
+  {
+    "name": "AL - PARQUE SHOPPING MACEIO",
+    "address": "Avenida Comendador Gustavo Paiva, 5945 - Loja 3073 - Cruz das Almas, Maceio - AL, 57038-000",
+    "coords": [
+      -9.6476843,
+      -35.7339264
+    ]
+  },
+  {
+    "name": "AM - PONTA NEGRA",
+    "address": "Avenida Coronel Teixeira, 5705 - Loja 12 - Ponta Negra, Manaus - AM, 69037-000",
+    "coords": [
+      -3.1316333,
+      -59.9825041
+    ]
+  },
+  {
+    "name": "AM - VIEIRA ALVES",
+    "address": "Avenida João Valério, 670 - Nossa Senhora das Graças, Manaus - AM, 69053-140",
+    "coords": [
+      -3.1075806,
+      -60.0179313
+    ]
+  },
+  {
+    "name": "BA - AEROPORTO LOJA",
+    "address": "Pr. Gago Coutinho, 282 - São Cristóvão, Salvador - BA, 41520-970",
+    "coords": [
+      -12.9822499,
+      -38.4812772
+    ]
+  },
+  {
+    "name": "BA - AEROPORTO QUIOSQUE",
+    "address": "Pr. Gago Coutinho, 282 - São Cristóvão, Salvador - BA, 41520-970",
+    "coords": [
+      -12.9822499,
+      -38.4812772
+    ]
+  },
+  {
+    "name": "BA - HORTO",
+    "address": "R. Waldemar Falcão - Horto Florestal, Salvador - BA, 40295-010",
+    "coords": [
+      -12.9973799,
+      -38.488737
+    ]
+  },
+  {
+    "name": "BA - PITUBA",
+    "address": "Rua das Hortênsias, 612 - Pituba, Salvador - BA, 41810-010",
+    "coords": [
+      -12.9939563,
+      -38.4562084
+    ]
+  },
+  {
+    "name": "BA - PRAIA DO FORTE",
+    "address": "Condominio Enseada Praia do Forte - loja 06, Mata de São João - BA, 48280-000",
+    "coords": [
+      -12.530685,
+      -38.300898
+    ]
+  },
+  {
+    "name": "BA - SHOPPING DA BAHIA",
+    "address": "Av. Tancredo Neves, 148 - Caminho das Árvores, Salvador - BA, 41820-020",
+    "coords": [
+      -12.9818497,
+      -38.4642793
+    ]
+  },
+  {
+    "name": "BA - SHOPPING PARALELA",
+    "address": "Av. Luís Viana Filho, 8544 - Paralela, Salvador - BA, 41730-101",
+    "coords": [
+      -12.9822499,
+      -38.4812772
+    ]
+  },
+  {
+    "name": "BA - SHOPPING SALVADOR",
+    "address": "Av. Tancredo Neves, 3133 - Caminho das Árvores, Salvador - BA, 41820-021",
+    "coords": [
+      -12.9785523,
+      -38.4546549
+    ]
+  },
+  {
+    "name": "BA - VILLAS",
+    "address": "Av. Praia de Itapuã - Vilas do Atlântico, Lauro de Freitas - BA, 42700-000",
+    "coords": [
+      -12.89242,
+      -38.3127691
+    ]
+  },
+  {
+    "name": "CE - AEROPORTO LOJA",
+    "address": "Av. Senador Carlos Jereissati, 3000 - Serrinha, Fortaleza - CE, 60741-900",
+    "coords": [
+      -3.7755728,
+      -38.5452139
+    ]
+  },
+  {
+    "name": "CE - ANA BILHAR",
+    "address": "R. Ana Bilhar, 1145 - Varjota, Fortaleza - CE, 60160-110",
+    "coords": [
+      -3.7304512,
+      -38.5217989
+    ]
+  },
+  {
+    "name": "CE - AQUIRAZ",
+    "address": "SJ JACUNDA-CORREGO DA MINHOCA, S/N - CONTAINER SAN PAOLO - CORREGO DA MINHOCA, Aquiraz - CE, 61700-000",
+    "coords": [
+      -3.9063117,
+      -38.387504
+    ]
+  },
+  {
+    "name": "CE - BEIRA MAR LOJA",
+    "address": "Av. Beira Mar, 2800 - Loja 1 - Meireles, Fortaleza - CE, 60165-120",
+    "coords": [
+      -3.7304512,
+      -38.5217989
+    ]
+  },
+  {
+    "name": "CE - BEIRA MAR QUIOSQUE",
+    "address": "Rua Osvaldo Cruz, Av. Beira Mar, 01, Fortaleza - CE, 60125-150",
+    "coords": [
+      -3.7304512,
+      -38.5217989
+    ]
+  },
+  {
+    "name": "CE - CAUCAIA",
+    "address": "Avenida Vereador Francisco Pessoa de Lima, 445 – Toco (Jurema), Caucaia – CE, 61663-020",
+    "coords": [
+      -3.7300563,
+      -38.6593082
+    ]
+  },
+  {
+    "name": "CE - DESEMBARGADOR MOREIRA",
+    "address": "Av. Des. Moreira, 560 - Meireles, Fortaleza - CE, 60170-000",
+    "coords": [
+      -3.7304512,
+      -38.5217989
+    ]
+  },
+  {
+    "name": "CE - EMBARQUE INTERNACIONAL",
+    "address": "Avenida Senador Carlos Jereissati, 3000 – T1n3710 – Aeroporto, Fortaleza – CE, 60741-900",
+    "coords": [
+      -3.7477845,
+      -38.4610596
+    ]
+  },
+  {
+    "name": "CE - EUSEBIO",
+    "address": "Av. Eusébio de Queiroz, 1890 - Tamatanduba, Eusébio - CE, 61768-680",
+    "coords": [
+      -3.870966,
+      -38.4664582
+    ]
+  },
+  {
+    "name": "CE - FATIMA",
+    "address": "R. Mario Mamede, 799 - Loja 01 - Fátima, Fortaleza - CE, 60415-000",
+    "coords": [
+      -3.7304512,
+      -38.5217989
+    ]
+  },
+  {
+    "name": "CE - FLORES 2",
+    "address": "R. Barbosa de Freitas, 1487 - Loja 1A - Aldeota, Fortaleza - CE, 60170-021",
+    "coords": [
+      -3.7304512,
+      -38.5217989
+    ]
+  },
+  {
+    "name": "CE - LOJA SUL",
+    "address": "R. República da Armênia, 1180 - Parque Manibura, Fortaleza - CE, 60821-760",
+    "coords": [
+      -3.7917054,
+      -38.4813647
+    ]
+  },
+  {
+    "name": "CE - PARANGABA",
+    "address": "Av. Dr. Silas Munguba, 643 - Parangaba, Fortaleza - CE, 60740-005",
+    "coords": [
+      -3.7304512,
+      -38.5217989
+    ]
+  },
+  {
+    "name": "CE - RIO MAR FORTALEZA",
+    "address": "Av. Des. Lauro Nogueira, 1500 - S.1024, P.L1 - Papicu, Fortaleza - CE, 60176-065",
+    "coords": [
+      -3.7304512,
+      -38.5217989
+    ]
+  },
+  {
+    "name": "CE - RIO MAR KENNEDY",
+    "address": "Av. Sgt. Hermínio Sampaio, 3100 - Loja 3025 - Pres. Kennedy, Fortaleza - CE, 60355-512",
+    "coords": [
+      -3.7304512,
+      -38.5217989
+    ]
+  },
+  {
+    "name": "CE - SHOPPING IGUATEMI",
+    "address": "Av. Washington Soares, 85 - Edson Queiroz, Fortaleza - CE, 60811-900",
+    "coords": [
+      -3.7554302,
+      -38.4887659
+    ]
+  },
+  {
+    "name": "CE2 - ICARAI",
+    "address": "R. João de Castro - Icaraí, Amontada - CE, 62540-000",
+    "coords": [
+      -3.3510918,
+      -39.8311925
+    ]
+  },
+  {
+    "name": "CE2 - JERICOACOARA",
+    "address": "Rua Olavo Vasconcelos, 74 - Vila de Jericoacoara, Jijoca de Jericoacoara - CE, 62598-000",
+    "coords": [
+      -2.8986278,
+      -40.4506081
+    ]
+  },
+  {
+    "name": "CE2 - PREA",
+    "address": "Av. Beira Mar, S/N - Caiçara, Cruz - CE, 62595-000",
+    "coords": [
+      -2.8957716,
+      -40.8497783
+    ]
+  },
+  {
+    "name": "CE2 - SOBRAL",
+    "address": "Av. Dom José, 1026 - Dom Jose, Sobral - CE, 62010-290",
+    "coords": [
+      -3.7995734,
+      -40.6212826
+    ]
+  },
+  {
+    "name": "CE3 - DABLIO MALL",
+    "address": "Avenida Governador Plácido Aderaldo Castelo, 830 – Loja 16 – Lagoa Seca, Juazeiro do Norte – CE, 63040-540",
+    "coords": [
+      -7.1500063,
+      -39.3134379
+    ]
+  },
+  {
+    "name": "CE3 - JUAZEIRO",
+    "address": "R. Odete Matos de Alencar, SN - Jardim Gonzaga, Juazeiro do Norte - CE, 63046-590",
+    "coords": [
+      -7.2098801,
+      -39.3141174
+    ]
+  },
+  {
+    "name": "MA - SHOPPING DA ILHA",
+    "address": "Av. Daniel de La Touche, 987 - Cohama, São Luís - MA, 65074-115",
+    "coords": [
+      -2.5275915,
+      -44.2550521
+    ]
+  },
+  {
+    "name": "MA - SHOPPING SAO LUIS",
+    "address": "Av. Prof. Carlos Cunha, 1000 - Jaracaty, Loja 376 Piso L - Jaracaty, São Luís - MA, 65076-907",
+    "coords": [
+      -2.5295265,
+      -44.2963942
+    ]
+  },
+  {
+    "name": "MT - SHOPPING ESTACAO CUIABA",
+    "address": "Avenida Miguel Sutil, 9300 – Loja 2100 Andar L2 – Santa Rosa, Cuiabá – MT, 78040-365",
+    "coords": [
+      -15.616066,
+      -56.123559
+    ]
+  },
+  {
+    "name": "MT - SHOPPING PANTANAL",
+    "address": "Avenida Historiador Rubens de Mendonça, 3300 – Jardim Aclimação, Cuiabá – MT, 78050-280",
+    "coords": [
+      -15.5775478,
+      -56.0713461
+    ]
+  },
+  {
+    "name": "PA - PARQUE SHOPPING",
+    "address": "Rod. Augusto Montenegro, 4300 - Parque Verde, Belém - PA, 66635-110",
+    "coords": [
+      -1.45056,
+      -48.4682453
+    ]
+  },
+  {
+    "name": "PA - SHOPPING BOULEVARD",
+    "address": "Av. Visc. de Souza Franco, 776 - Reduto, Belém - PA, 66053-000",
+    "coords": [
+      -1.4463293,
+      -48.4897197
+    ]
+  },
+  {
+    "name": "PA - SHOPPING GRAO PARA",
+    "address": "Av. Centenário, 1052 - Mangueirão, Belém - PA, 66640-150",
+    "coords": [
+      -1.3825123,
+      -48.4585742
+    ]
+  },
+  {
+    "name": "PA - UMARIZAL",
+    "address": "R. Cônego Jerônimo Pimentel, 242 - Umarizal, Belém - PA, 66055-000",
+    "coords": [
+      -1.4427186,
+      -48.4881507
+    ]
+  },
+  {
+    "name": "PB - CAMPINA GRANDE",
+    "address": "R. Otacílio Nepomuceno, 600 - Catolé, Campina Grande - PB, 58410-160",
+    "coords": [
+      -7.2332975,
+      -35.8740287
+    ]
+  },
+  {
+    "name": "PB - ORIGENS",
+    "address": "Av. João Maurício, 1235 - Manaíra, João Pessoa - PB, 58038-000",
+    "coords": [
+      -7.1029727,
+      -34.8307238
+    ]
+  },
+  {
+    "name": "PB - SHOPPING MANAIRA",
+    "address": "Av. Gov. Flávio Ribeiro Coutinho, 805 - Manaíra, João Pessoa - PB, 58037-971",
+    "coords": [
+      -7.1215981,
+      -34.882028
+    ]
+  },
+  {
+    "name": "PE - BOA VIAGEM",
+    "address": "R. Dona Magina Pontual, 48 - Loja 05 - Boa Viagem, Recife - PE, 51021-510",
+    "coords": [
+      -8.0584933,
+      -34.8848193
+    ]
+  },
+  {
+    "name": "PE - CARUARU",
+    "address": "Av. Adjar da Silva Casé, 800 - LOJA 201 - Indianópolis, Caruaru - PE, 55024-740",
+    "coords": [
+      -8.2829702,
+      -35.9722852
+    ]
+  },
+  {
+    "name": "PE - MAURICIO DE NASSAU",
+    "address": "Avenida República do Líbano, 251 – Setor Comercial 311 – Pina, Recife – PE, 51110-160",
+    "coords": [
+      -8.1519378,
+      -34.9119722
+    ]
+  },
+  {
+    "name": "PE - OLINDA",
+    "address": "Rua Carmelita Soares Muniz de Araújo, 225 – Cj 208 – Casa Caiada, Olinda – PE, 53130-645",
+    "coords": [
+      -7.9986401,
+      -34.8459552
+    ]
+  },
+  {
+    "name": "PE - ORIGENS / CASA FORTE",
+    "address": "Av. Dezessete de Agosto, 1659 - Parnamirim, Recife - PE, 52060-590",
+    "coords": [
+      -8.034125,
+      -34.9111834
+    ]
+  },
+  {
+    "name": "PE - RIO MAR RECIFE",
+    "address": "Av. República do Líbano, 251 - Pina, Recife - PE, 51110-160",
+    "coords": [
+      -8.0859828,
+      -34.8941406
+    ]
+  },
+  {
+    "name": "PE - RUA AMELIA",
+    "address": "R. Amélia, 452 - Graças, Recife - PE, 52011-050",
+    "coords": [
+      -8.0447461,
+      -34.8993718
+    ]
+  },
+  {
+    "name": "PE - SHOPPING GUARARAPES",
+    "address": "Av. Barreto de Menezes, 800 - Piedade, Jaboatão dos Guararapes - PE, 54410-100",
+    "coords": [
+      -8.1686427,
+      -34.9190677
+    ]
+  },
+  {
+    "name": "PE - SHOPPING RECIFE",
+    "address": "R. Padre Carapuceiro, 777 - Boa Viagem, Recife - PE, 51020-900",
+    "coords": [
+      -8.1197249,
+      -34.9032262
+    ]
+  },
+  {
+    "name": "PE - SHOPPING TACARUNA",
+    "address": "Av. Gov. Agamenon Magalhães, 135 - Santo Amaro, Recife - PE, 50110-000",
+    "coords": [
+      -8.0584933,
+      -34.8848193
+    ]
+  },
+  {
+    "name": "PI - DIRCEU",
+    "address": "Av. Joaquim Nelson, 81 - Redonda, Teresina - PI, 64076-800",
+    "coords": [
+      -5.1203346,
+      -42.7524808
+    ]
+  },
+  {
+    "name": "PI - DOM SEVERINO",
+    "address": "Av. Dom Severino, 430 - Fátima, Teresina - PI, 64049-370",
+    "coords": [
+      -5.0691237,
+      -42.7986331
+    ]
+  },
+  {
+    "name": "PI - SHOPPING RIO POTY",
+    "address": "Avenida Marechal Castelo Branco, 911 Loja 404 Letra G - Cabral, Teresina - PI, 64003-087",
+    "coords": [
+      -5.0874608,
+      -42.8049571
+    ]
+  },
+  {
+    "name": "PI - SHOPPING RIVERSIDE",
+    "address": "Av. Raul Lopes - Noivos, Teresina - PI, 64049-538",
+    "coords": [
+      -5.0866033,
+      -42.7852953
+    ]
+  },
+  {
+    "name": "RN - LAGOA MALL",
+    "address": "R São José, 2182 - Lagoa Nova, Natal - RN, 59063-150",
+    "coords": [
+      -5.8104567,
+      -35.2118172
+    ]
+  },
+  {
+    "name": "RN - MIDWAY",
+    "address": "Av. Nevaldo Rocha, 3775 - Tirol, Natal - RN, 59015-970",
+    "coords": [
+      -5.8111386,
+      -35.2061918
+    ]
+  },
+  {
+    "name": "RN - MOSSORO",
+    "address": "Av. João da Escóssia, 1102 - Loja 01 - Nova Betânia, Mossoró - RN, 59607-330",
+    "coords": [
+      -5.1904332,
+      -37.3443872
+    ]
+  },
+  {
+    "name": "RN - NATAL SHOPPING",
+    "address": "Av. Sen. Salgado Filho, 2234 - Candelária, Natal - RN, 59064-900",
+    "coords": [
+      -5.805398,
+      -35.2080905
+    ]
+  },
+  {
+    "name": "RN - PARNAMIRIM",
+    "address": "Avenida Ayrton Senna, 2441 – Nova Parnamirim, Parnamirim – RN, 59151-901",
+    "coords": [
+      -5.8871706,
+      -35.1996707
+    ]
+  },
+  {
+    "name": "SE - JARDINS",
+    "address": "Avenida Ministro Geraldo Barreto Sobral, 215 – Jardins, Aracaju – SE, 49026-010",
+    "coords": [
+      -10.9501823,
+      -37.0659733
+    ]
+  },
+  {
+    "name": "SE - RIOMAR ARACAJU",
+    "address": "Rua Delmiro Gouveia, 400 - Coroa do Meio, Aracaju/SE, 49035-810",
+    "coords": [
+      -10.971154,
+      -37.0376573
+    ]
+  },
+  {
+    "name": "SP - CIDADE SAO PAULO",
+    "address": "Avenida Paulista, 1230 – Bela Vista, São Paulo – SP, 01310-901",
+    "coords": [
+      -23.5639618,
+      -46.6529048
+    ]
+  },
+  {
+    "name": "SP - MORUMBI SHOPPING",
+    "address": "Avenida Roque Petroni Júnior, 1089 - Santo Amaro, São Paulo, SP, Brasil",
+    "coords": [
+      -23.6234167,
+      -46.6985436
+    ]
+  },
+  {
+    "name": "SP - SHOPPING ELDORADO",
+    "address": "Av. Rebouças, 3970, Loja 455 Pav. 03 - Pinheiros, São Paulo - SP, 05402-600",
+    "coords": [
+      -23.5506507,
+      -46.6333824
+    ]
+  },
+  {
+    "name": "SP - SHOPPING PATIO PAULISTA",
+    "address": "R. Treze de Maio, 1933 - Loja 233 - Bela Vista, São Paulo - SP, 01327-001",
+    "coords": [
+      -23.5506507,
+      -46.6333824
+    ]
+  }
+]

@@ -57,6 +57,25 @@ app.post('/api/sync', (req, res) => {
   });
 });
 
+// Background Auto-Sync: Run the sync script every 10 minutes to fetch new/updated tickets
+const AUTO_SYNC_INTERVAL = 10 * 60 * 1000; // 10 minutes
+setInterval(() => {
+  console.log('[Background Worker]: Triggering scheduled synchronization...');
+  const pythonProcess = spawn('python', ['sync_data.py']);
+  
+  pythonProcess.stdout.on('data', (data) => {
+    console.log(`[Background Worker stdout]: ${data.toString().trim()}`);
+  });
+  
+  pythonProcess.stderr.on('data', (data) => {
+    console.error(`[Background Worker stderr]: ${data.toString().trim()}`);
+  });
+  
+  pythonProcess.on('close', (code) => {
+    console.log(`[Background Worker]: Sync process exited with code ${code}`);
+  });
+}, AUTO_SYNC_INTERVAL);
+
 app.listen(PORT, () => {
   console.log(`Backend server running at http://localhost:${PORT}`);
 });
