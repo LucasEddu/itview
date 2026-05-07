@@ -906,63 +906,64 @@ export default function App() {
     }).sort((a, b) => b.id - a.id);
   }, [rawData.tickets]);
 
+  // Operational Metrics: Calculate today's real-time productivity aggregates (Brasília/Fortaleza Time)
   const dailyAgentMetrics = useMemo(() => {
-    // Get today's date in America/Fortaleza (UTC-3)
-    const options = { timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit' };
-    const formatter = new Intl.DateTimeFormat('pt-BR', options);
-    const parts = formatter.formatToParts(new Date());
-    const year = parts.find(p => p.type === 'year').value;
-    const month = parts.find(p => p.type === 'month').value;
-    const day = parts.find(p => p.type === 'day').value;
-    const todayStr = `${year}-${month}-${day}`;
+    const todayStr = new Date().toLocaleDateString('pt-BR', {
+      timeZone: 'America/Fortaleza',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).split('/').reverse().join('-');
 
-    const agentMap = {};
-    let pendingInQueue = 0;
-
-    rawData.tickets.forEach(t => {
-      const isToday = t.date === todayStr;
+    // 1. Unassigned tickets currently in queue (not assigned to an active agent)
+    const pendingInQueue = rawData.tickets.filter(t => {
       const status = t.status || 'Finalizado';
-      const isResolved = status === 'Finalizado';
-      const agentName = t.agent || 'Não Atribuído';
+      if (status === 'Finalizado') return false;
+      const agentLower = (t.agent || '').toLowerCase();
+      return !t.agent || agentLower === 'não atribuído' || agentLower === 'sistema' || agentLower === '';
+    }).length;
+
+    // 2. Active agent aggregates for today
+    const agentsMap = {};
+    
+    rawData.tickets.forEach(t => {
+      const agent = t.agent || '';
+      const agentLower = agent.toLowerCase();
       
-      if (agentName !== 'Não Atribuído' && agentName !== 'Sistema') {
-        if (!agentMap[agentName]) {
-          agentMap[agentName] = { resolvedToday: 0, inProgress: 0 };
+      // Skip system or unassigned
+      if (!agent || agentLower === 'não atribuído' || agentLower === 'sistema' || agentLower === '') {
+        return;
+      }
+
+      // Format ticket date to YYYY-MM-DD for check
+      const ticketDate = (t.created_at || '').substring(0, 10);
+      const isToday = ticketDate === todayStr;
+
+      // Status check
+      const status = t.status || 'Finalizado';
+      const isInProgress = status !== 'Finalizado';
+
+      // We track agents active today: they either have a ticket in progress, or they resolved a ticket today
+      const resolvedToday = (isToday && status === 'Finalizado') ? 1 : 0;
+
+      if (isInProgress || resolvedToday > 0) {
+        if (!agentsMap[agent]) {
+          agentsMap[agent] = { name: agent, inProgress: 0, resolvedToday: 0 };
         }
-        if (isToday && isResolved) {
-          agentMap[agentName].resolvedToday++;
+        if (isInProgress) {
+          agentsMap[agent].inProgress += 1;
         }
+        agentsMap[agent].resolvedToday += resolvedToday;
       }
     });
 
-    openTickets.forEach(t => {
-      const agentName = t.agent || 'Não Atribuído';
-      if (agentName === 'Não Atribuído' || agentName === 'Sistema') {
-        pendingInQueue++;
-      } else {
-        if (!agentMap[agentName]) {
-          agentMap[agentName] = { resolvedToday: 0, inProgress: 0 };
-        }
-        agentMap[agentName].inProgress++;
-      }
-    });
-
-    const agentsList = Object.entries(agentMap)
-      .map(([name, stats]) => ({
-        name,
-        resolvedToday: stats.resolvedToday,
-        inProgress: stats.inProgress,
-        totalToday: stats.resolvedToday + stats.inProgress
-      }))
-      .filter(a => a.resolvedToday > 0 || a.inProgress > 0)
-      .sort((a, b) => b.inProgress - a.inProgress || b.resolvedToday - a.resolvedToday);
+    const activeAgents = Object.values(agentsMap).sort((a, b) => b.resolvedToday - a.resolvedToday);
 
     return {
-      agents: agentsList,
-      pendingInQueue
+      pendingInQueue,
+      agents: activeAgents
     };
-  }, [rawData.tickets, openTickets]);
-
+  }, [rawData.tickets]);
 
   // Section 6: Regional Criticality Data
   const criticalityData = useMemo(() => {
@@ -1268,6 +1269,122 @@ export default function App() {
                 <h2 className="section-title">KPIS PRINCIPAIS</h2>
                 <div className="section-line"></div>
              </div>
+             <section className="section-anchor">
+                <div className="kpi-grid">
+                  <div className="card animate-fade" style={{ borderTop: '2px solid var(--brand-red)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Ticket size={14} color="var(--brand-red)" /><div className="card-label" style={{ margin: 0 }}>Total de Chamados</div></div>
+                        <GrowthBadge change={comparisonMetrics.total} />
+                      </div>
+                      <div className="card-value" style={{ color: 'var(--brand-red)' }}>{metrics.total.toLocaleString()}</div>
+                    </div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>chamados resolvidos</div>
+                  </div>
+                  <div className="card animate-fade" style={{ borderTop: '2px solid var(--brand-green)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><CheckCircle2 size={14} color="var(--brand-green)" /><div className="card-label" style={{ margin: 0 }}>Tempo Médio Resolução</div></div>
+                        <GrowthBadge change={comparisonMetrics.avgTotal} isNegativeGood={true} />
+                      </div>
+                      <div className="card-value" style={{ color: 'var(--brand-green)' }}>{formatTime(metrics.avgTotal)}</div>
+                    </div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>por chamado</div>
+                  </div>
+                  <div className="card animate-fade" style={{ borderTop: '2px solid var(--brand-orange)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={14} color="var(--brand-orange)" /><div className="card-label" style={{ margin: 0 }}>Tempo Médio na Fila</div></div>
+                        <GrowthBadge change={comparisonMetrics.avgWait} isNegativeGood={true} />
+                      </div>
+                      <div className="card-value" style={{ color: 'var(--brand-orange)' }}>{formatTime(metrics.avgWait)}</div>
+                    </div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>aguardando atendimento</div>
+                  </div>
+                  <div className="card animate-fade" style={{ borderTop: `2px solid ${getCsatColor(metrics.csatScore)}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Trophy size={14} color={getCsatColor(metrics.csatScore)} /><div className="card-label" style={{ margin: 0 }}>CSAT Score</div></div>
+                        <GrowthBadge change={comparisonMetrics.csatScore} />
+                      </div>
+                      <div className="card-value" style={{ color: getCsatColor(metrics.csatScore) }}>{metrics.csatScore.toFixed(1)}%</div>
+                    </div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>{metrics.ratedCount} avaliações</div>
+                  </div>
+                </div>
+             </section>
+
+             {/* SECTION 0.1: USUÁRIOS EM DESTAQUE */}
+             <div className="section-header" style={{ marginTop: '2rem' }}>
+                <div className="section-prefix">
+                   <LayoutGrid size={14} />
+                   <Diamond size={12} style={{ color: 'var(--brand-orange)' }} />
+                </div>
+                <h2 className="section-title">USUÁRIOS EM DESTAQUE</h2>
+                <div className="section-line"></div>
+             </div>
+             <section className="section-anchor">
+               <div className="kpi-grid">
+                 <div className="card animate-fade">
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <div className="card-label">Total de Usuários</div>
+                      <div style={{ fontSize: '0.6rem', padding: '2px 6px', border: '1px solid var(--border-dim)', borderRadius: '4px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Ver Todos</div>
+                   </div>
+                   <div className="card-value">{metrics.uniqueUsers.toLocaleString()}</div>
+                   <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>usuários únicos</div>
+                 </div>
+                 <div className="card animate-fade" style={{ borderTop: '2px solid var(--brand-orange)' }}>
+                   <div className="card-label">Usuário Mais Ativo</div>
+                   <div className="card-value" style={{ fontSize: '1.2rem', marginTop: '0.5rem', color: 'var(--brand-orange)' }}>{metrics.mostActiveUser[0]}</div>
+                   <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>{metrics.mostActiveUser[1]} chamados</div>
+                 </div>
+                 <div className="card animate-fade" style={{ borderTop: '2px solid var(--brand-red)' }}>
+                   <div className="card-label">Média por Usuário</div>
+                   <div className="card-value" style={{ color: 'var(--brand-red)' }}>{Math.round(metrics.avgTicketsPerUser)}</div>
+                   <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>chamados/usuário</div>
+                 </div>
+                 <div className="card animate-fade" style={{ borderTop: '2px solid var(--brand-green)' }}>
+                   <div className="card-label">Empresa Mais Ativa</div>
+                   <div className="card-value" style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: 'var(--brand-green)', fontWeight: 800 }}>{metrics.mostActiveCompany[0]}</div>
+                   <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>{metrics.mostActiveCompany[1]} chamados</div>
+                 </div>
+               </div>
+             </section>
+
+
+             {/* SECTION 0.2: CHAMADOS EM ABERTO (TEMPO REAL) */}
+             <div className="section-header" style={{ marginTop: '2.5rem' }}>
+                <div className="section-prefix">
+                   <Clock size={14} color="var(--brand-red)" />
+                   <div style={{
+                     width: '8px',
+                     height: '8px',
+                     background: 'var(--brand-red)',
+                     borderRadius: '50%',
+                     boxShadow: '0 0 8px var(--brand-red)',
+                     animation: 'pulse 2s infinite'
+                   }} />
+                </div>
+                <h2 className="section-title">ACOMPANHAMENTO DE CHAMADOS EM ABERTO</h2>
+                <div style={{
+                  background: 'rgba(218, 13, 23, 0.12)',
+                  color: 'var(--brand-red)',
+                  padding: '4px 10px',
+                  borderRadius: '12px',
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  marginLeft: '10px',
+                  border: '1px solid rgba(218, 13, 23, 0.2)'
+                }}>
+                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-red)', display: 'inline-block' }} className="animate-pulse"></span>
+                   {openTickets.length} EM ABERTO
+                </div>
+                <div className="section-line"></div>
+             </div>
+
                            <section className="section-anchor">
                 <div style={{
                   display: 'grid',
@@ -1275,57 +1392,87 @@ export default function App() {
                   gap: '1.5rem',
                   alignItems: 'stretch'
                 }}>
-                  {/* Coluna Esquerda: Acompanhamento de Chamados em Aberto */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'stretch' }}>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.2rem' }}>
+                  {/* COLUNA ESQUERDA: ÚLTIMOS CHAMADOS EM ABERTO */}
+                  <div className="card" style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-dim)',
+                    borderRadius: '12px',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                    justifyContent: 'flex-start'
+                  }}>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      color: 'var(--text-dim)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
                       <Clock size={12} color="var(--brand-red)" />
-                      ÚLTIMOS CHAMADOS EM ABERTO
+                      Últimos Chamados em Aberto
                     </div>
+
                     {openTickets.length === 0 ? (
-                      <div className="card animate-fade" style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid var(--brand-green)', padding: '1.5rem', background: 'var(--bg-card)', height: '100%', justifyContent: 'center', minHeight: '220px' }}>
-                         <div style={{ background: 'rgba(79, 112, 67, 0.12)', padding: '8px', borderRadius: '50%' }}>
-                            <CheckCircle2 size={24} color="var(--brand-green)" />
-                         </div>
-                         <div>
-                            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'white', letterSpacing: '0.02em' }}>NENHUM CHAMADO EM ABERTO</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>Excelente! Todos os chamados de suporte estão finalizados no momento.</div>
-                         </div>
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.75rem',
+                        padding: '2.5rem 1rem',
+                        border: '1.5px dashed rgba(79, 112, 67, 0.3)',
+                        borderRadius: '8px',
+                        background: 'rgba(79, 112, 67, 0.02)',
+                        flex: 1
+                      }}>
+                        <div style={{ background: 'rgba(79, 112, 67, 0.12)', padding: '10px', borderRadius: '50%' }}>
+                          <CheckCircle2 size={24} color="var(--brand-green)" />
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'white' }}>NENHUM CHAMADO EM ABERTO</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>Fila limpa! Todos os atendimentos concluídos.</div>
+                        </div>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%', justifyContent: 'flex-start' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
                         {openTickets.slice(0, 2).map((ticket, i) => (
-                          <div key={i} className="card animate-fade" style={{
+                          <div key={i} style={{
                             borderLeft: '4px solid var(--brand-red)',
-                            padding: '1.25rem',
+                            padding: '0.75rem 0.85rem',
+                            background: 'rgba(255, 255, 255, 0.01)',
+                            border: '1px solid var(--border-dim)',
+                            borderLeftWidth: '4px',
+                            borderRadius: '8px',
                             display: 'flex',
                             flexDirection: 'column',
-                            justifyContent: 'space-between',
-                            gap: '1rem',
-                            background: 'var(--bg-card)',
-                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-                            position: 'relative',
-                            overflow: 'hidden'
+                            gap: '0.5rem',
+                            fontSize: '0.75rem'
                           }}>
                             {/* Header row */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                 <span style={{
-                                  background: 'rgba(218, 13, 23, 0.12)',
+                                  background: 'rgba(218, 13, 23, 0.1)',
                                   color: 'var(--brand-red)',
-                                  padding: '4px 8px',
-                                  borderRadius: '6px',
-                                  fontSize: '0.75rem',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.7rem',
                                   fontWeight: 800,
                                   fontFamily: 'JetBrains Mono, monospace'
                                 }}>
                                   #{ticket.id}
                                 </span>
                                 <span style={{
-                                  background: 'rgba(218, 85, 19, 0.12)',
+                                  background: 'rgba(218, 85, 19, 0.1)',
                                   color: 'var(--brand-orange)',
-                                  padding: '4px 8px',
-                                  borderRadius: '6px',
-                                  fontSize: '0.65rem',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.6rem',
                                   fontWeight: 800,
                                   textTransform: 'uppercase'
                                 }}>
@@ -1333,68 +1480,42 @@ export default function App() {
                                 </span>
                               </div>
                               <span style={{
-                                fontSize: '0.7rem',
+                                fontSize: '0.65rem',
                                 color: 'var(--brand-red)',
                                 fontWeight: 700,
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '4px'
                               }}>
-                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-red)', display: 'inline-block' }} className="animate-pulse"></span>
+                                <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--brand-red)', display: 'inline-block' }} className="animate-pulse"></span>
                                 {getElapsedTime(ticket.created_at)}
                               </span>
                             </div>
 
-                            {/* Body content */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
-                                <Users size={14} color="var(--text-dim)" style={{ marginTop: '2px', flexShrink: 0 }} />
-                                <div>
-                                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'white' }}>{ticket.user}</div>
-                                  <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.1rem', textTransform: 'uppercase' }}>
-                                    {ticket.company}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
-                                <Folder size={14} color="var(--text-dim)" style={{ marginTop: '2px', flexShrink: 0 }} />
-                                <div style={{ fontWeight: 500, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-                                  {ticket.sector}
-                                </div>
+                            {/* Ticket Title & User */}
+                            <div>
+                              <div style={{ fontWeight: 700, color: 'white' }}>{ticket.user}</div>
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.1rem', textTransform: 'uppercase' }}>
+                                {ticket.company} • {ticket.sector}
                               </div>
                             </div>
 
                             {/* Footer row */}
                             <div style={{
                               borderTop: '1px solid var(--border-dim)',
-                              paddingTop: '0.75rem',
+                              paddingTop: '0.5rem',
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
-                              fontSize: '0.75rem'
+                              fontSize: '0.7rem'
                             }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <div style={{
-                                  width: 18,
-                                  height: 18,
-                                  borderRadius: '50%',
-                                  background: 'rgba(255,255,255,0.05)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: '0.65rem',
-                                  fontWeight: 800,
-                                  color: 'var(--brand-red)'
-                                }}>
-                                  {ticket.agent.substring(0, 1)}
-                                </div>
-                                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Atendente: <strong style={{ color: 'white' }}>{ticket.agent}</strong></span>
-                              </div>
+                              <span style={{ color: 'var(--text-secondary)' }}>
+                                Atendente: <strong style={{ color: 'white' }}>{ticket.agent}</strong>
+                              </span>
                               {ticket.wait > 0 && (
-                                <div style={{ color: 'var(--brand-orange)', fontWeight: 700, fontSize: '0.7rem', background: 'rgba(218, 85, 19, 0.08)', padding: '2px 6px', borderRadius: '4px' }}>
-                                  Espera: {formatTime(ticket.wait)}
-                                </div>
+                                <span style={{ color: 'var(--brand-orange)', fontWeight: 700 }}>
+                                  Fila: {formatTime(ticket.wait)}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -1403,37 +1524,34 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* Coluna Direita: Relação de Chamados Diários / Resumo Operacional */}
-                  <div className="card animate-fade" style={{
+                  {/* COLUNA DIREITA: RESUMO OPERACIONAL DIÁRIO */}
+                  <div className="card" style={{
                     background: 'var(--bg-card)',
-                    borderLeft: '4px solid var(--brand-blue)',
+                    border: '1px solid var(--border-dim)',
+                    borderRadius: '12px',
                     padding: '1.25rem',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '1rem',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-                    height: '100%',
                     justifyContent: 'flex-start'
                   }}>
-                    {/* Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-dim)', paddingBottom: '0.75rem' }}>
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Users size={16} color="var(--brand-blue)" />
-                          RESUMO OPERACIONAL DIÁRIO
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.15rem' }}>
-                          Fila em tempo real e produtividade dos atendentes
-                        </div>
-                      </div>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--brand-blue)', fontWeight: 800, background: 'rgba(59, 130, 246, 0.12)', padding: '2px 8px', borderRadius: '4px' }}>
-                        HOJE
-                      </span>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      color: 'var(--text-dim)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <LayoutGrid size={12} />
+                      Resumo Operacional Diário (Brasília Time)
                     </div>
 
-                    {/* Fila Status */}
+                    {/* Fila Fator Alert */}
                     <div style={{
-                      background: dailyAgentMetrics.pendingInQueue > 0 ? 'rgba(218, 13, 23, 0.08)' : 'rgba(79, 112, 67, 0.08)',
+                      background: dailyAgentMetrics.pendingInQueue > 0 ? 'rgba(218, 13, 23, 0.05)' : 'rgba(79, 112, 67, 0.05)',
                       border: dailyAgentMetrics.pendingInQueue > 0 ? '1px solid rgba(218, 13, 23, 0.15)' : '1px solid rgba(79, 112, 67, 0.15)',
                       borderRadius: '8px',
                       padding: '0.75rem',
@@ -1542,200 +1660,6 @@ export default function App() {
                   </div>
                 </div>
               </section>
-
-             {/* SECTION 0.1: USUÁRIOS EM DESTAQUE */}
-             <div className="section-header" style={{ marginTop: '2rem' }}>
-                <div className="section-prefix">
-                   <LayoutGrid size={14} />
-                   <Diamond size={12} style={{ color: 'var(--brand-orange)' }} />
-                </div>
-                <h2 className="section-title">USUÁRIOS EM DESTAQUE</h2>
-                <div className="section-line"></div>
-             </div>
-             <section className="section-anchor">
-               <div className="kpi-grid">
-                 <div className="card animate-fade">
-                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <div className="card-label">Total de Usuários</div>
-                      <div style={{ fontSize: '0.6rem', padding: '2px 6px', border: '1px solid var(--border-dim)', borderRadius: '4px', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Ver Todos</div>
-                   </div>
-                   <div className="card-value">{metrics.uniqueUsers.toLocaleString()}</div>
-                   <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>usuários únicos</div>
-                 </div>
-                 <div className="card animate-fade" style={{ borderTop: '2px solid var(--brand-orange)' }}>
-                   <div className="card-label">Usuário Mais Ativo</div>
-                   <div className="card-value" style={{ fontSize: '1.2rem', marginTop: '0.5rem', color: 'var(--brand-orange)' }}>{metrics.mostActiveUser[0]}</div>
-                   <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>{metrics.mostActiveUser[1]} chamados</div>
-                 </div>
-                 <div className="card animate-fade" style={{ borderTop: '2px solid var(--brand-red)' }}>
-                   <div className="card-label">Média por Usuário</div>
-                   <div className="card-value" style={{ color: 'var(--brand-red)' }}>{Math.round(metrics.avgTicketsPerUser)}</div>
-                   <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>chamados/usuário</div>
-                 </div>
-                 <div className="card animate-fade" style={{ borderTop: '2px solid var(--brand-green)' }}>
-                   <div className="card-label">Empresa Mais Ativa</div>
-                   <div className="card-value" style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: 'var(--brand-green)', fontWeight: 800 }}>{metrics.mostActiveCompany[0]}</div>
-                   <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>{metrics.mostActiveCompany[1]} chamados</div>
-                 </div>
-               </div>
-             </section>
-
-
-             {/* SECTION 0.2: CHAMADOS EM ABERTO (TEMPO REAL) */}
-             <div className="section-header" style={{ marginTop: '2.5rem' }}>
-                <div className="section-prefix">
-                   <Clock size={14} color="var(--brand-red)" />
-                   <div style={{
-                     width: '8px',
-                     height: '8px',
-                     background: 'var(--brand-red)',
-                     borderRadius: '50%',
-                     boxShadow: '0 0 8px var(--brand-red)',
-                     animation: 'pulse 2s infinite'
-                   }} />
-                </div>
-                <h2 className="section-title">ACOMPANHAMENTO DE CHAMADOS EM ABERTO</h2>
-                <div style={{
-                  background: 'rgba(218, 13, 23, 0.12)',
-                  color: 'var(--brand-red)',
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  fontSize: '0.65rem',
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  marginLeft: '10px',
-                  border: '1px solid rgba(218, 13, 23, 0.2)'
-                }}>
-                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-red)', display: 'inline-block' }} className="animate-pulse"></span>
-                   {openTickets.length} EM ABERTO
-                </div>
-                <div className="section-line"></div>
-             </div>
-
-             <section className="section-anchor">
-               {openTickets.length === 0 ? (
-                 <div className="card animate-fade" style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid var(--brand-green)', padding: '1.5rem', background: 'var(--bg-card)' }}>
-                    <div style={{ background: 'rgba(79, 112, 67, 0.12)', padding: '8px', borderRadius: '50%' }}>
-                       <CheckCircle2 size={24} color="var(--brand-green)" />
-                    </div>
-                    <div>
-                       <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'white', letterSpacing: '0.02em' }}>NENHUM CHAMADO EM ABERTO</div>
-                       <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>Excelente! Todos os chamados de suporte estão finalizados no momento.</div>
-                    </div>
-                 </div>
-               ) : (
-                 <div style={{ display: 'grid', gridTemplateColumns: openTickets.length === 1 ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
-                   {openTickets.slice(0, 2).map((ticket, i) => (
-                     <div key={i} className="card animate-fade" style={{
-                       borderLeft: '4px solid var(--brand-red)',
-                       padding: '1.25rem',
-                       display: 'flex',
-                       flexDirection: 'column',
-                       justifyContent: 'space-between',
-                       gap: '1.25rem',
-                       background: 'var(--bg-card)',
-                       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-                       position: 'relative',
-                       overflow: 'hidden'
-                     }}>
-                       {/* Header row */}
-                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                           <span style={{
-                             background: 'rgba(218, 13, 23, 0.12)',
-                             color: 'var(--brand-red)',
-                             padding: '4px 8px',
-                             borderRadius: '6px',
-                             fontSize: '0.75rem',
-                             fontWeight: 800,
-                             fontFamily: 'JetBrains Mono, monospace'
-                           }}>
-                             #{ticket.id}
-                           </span>
-                           <span style={{
-                             background: 'rgba(218, 85, 19, 0.12)',
-                             color: 'var(--brand-orange)',
-                             padding: '4px 8px',
-                             borderRadius: '6px',
-                             fontSize: '0.65rem',
-                             fontWeight: 800,
-                             textTransform: 'uppercase'
-                           }}>
-                             {ticket.status}
-                           </span>
-                         </div>
-                         <span style={{
-                           fontSize: '0.7rem',
-                           color: 'var(--brand-red)',
-                           fontWeight: 700,
-                           display: 'flex',
-                           alignItems: 'center',
-                           gap: '4px'
-                         }}>
-                           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-red)', display: 'inline-block' }} className="animate-pulse"></span>
-                           {getElapsedTime(ticket.created_at)}
-                         </span>
-                       </div>
-
-                       {/* Body content */}
-                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
-                           <Users size={14} color="var(--text-dim)" style={{ marginTop: '2px', flexShrink: 0 }} />
-                           <div>
-                             <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'white' }}>{ticket.user}</div>
-                             <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.1rem', textTransform: 'uppercase' }}>
-                               {ticket.company}
-                             </div>
-                           </div>
-                         </div>
-
-                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
-                           <Folder size={14} color="var(--text-dim)" style={{ marginTop: '2px', flexShrink: 0 }} />
-                           <div style={{ fontWeight: 500, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-                             {ticket.sector}
-                           </div>
-                         </div>
-                       </div>
-
-                       {/* Footer row */}
-                       <div style={{
-                         borderTop: '1px solid var(--border-dim)',
-                         paddingTop: '0.75rem',
-                         display: 'flex',
-                         justifyContent: 'space-between',
-                         alignItems: 'center',
-                         fontSize: '0.75rem'
-                       }}>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                           <div style={{
-                             width: 18,
-                             height: 18,
-                             borderRadius: '50%',
-                             background: 'rgba(255,255,255,0.05)',
-                             display: 'flex',
-                             alignItems: 'center',
-                             justifyContent: 'center',
-                             fontSize: '0.65rem',
-                             fontWeight: 800,
-                             color: 'var(--brand-red)'
-                           }}>
-                             {ticket.agent.substring(0, 1)}
-                           </div>
-                           <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Atendente: <strong style={{ color: 'white' }}>{ticket.agent}</strong></span>
-                         </div>
-                         {ticket.wait > 0 && (
-                           <div style={{ color: 'var(--brand-orange)', fontWeight: 700, fontSize: '0.7rem', background: 'rgba(218, 85, 19, 0.08)', padding: '2px 6px', borderRadius: '4px' }}>
-                             Espera: {formatTime(ticket.wait)}
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               )}
-             </section>
 
 
             </div>
