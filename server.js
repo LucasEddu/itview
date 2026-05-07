@@ -76,6 +76,18 @@ setInterval(() => {
   });
 }, AUTO_SYNC_INTERVAL);
 
+// Serve static files from the React build in production
+const distPath = path.join(__dirname, 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  // Fallback for SPA routing to serve index.html for any other route
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`Backend server running at http://localhost:${PORT}`);
+  console.log(`Production dashboard available at http://localhost:${PORT}`);
 });
+
