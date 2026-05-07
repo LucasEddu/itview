@@ -18,7 +18,8 @@ import {
   Pie,
   Legend,
   ComposedChart,
-  Brush
+  Brush,
+  LabelList
 } from 'recharts';
 import { MapContainer, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -281,6 +282,8 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [tvSlideIndex, setTvSlideIndex] = useState(0);
   const [tvScale, setTvScale] = useState(1);
+  const [excludedAgents, setExcludedAgents] = useState([]);
+  const [isAgentFilterOpen, setIsAgentFilterOpen] = useState(true);
 
   // Resolution-independent scaling for TV Presentation Mode (scales 1920x1080 design to fit any screen size natively)
   useEffect(() => {
@@ -387,7 +390,7 @@ export default function App() {
     return rawData.tickets.filter(t => {
       if (['Não Atribuído', 'Sistema'].includes(t.agent) || t.total === 0) return false;
 
-      const agentMatch = selectedAgent === 'Todos' || t.agent === selectedAgent;
+      const agentMatch = !excludedAgents.includes(t.agent);
       const sectorMatch = selectedSector === 'Todos' || t.sector === selectedSector;
       const searchMatch = !searchQuery || 
         t.user.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -625,7 +628,7 @@ export default function App() {
       previousTickets = rawData.tickets.filter(t => {
         if (['Não Atribuído', 'Sistema'].includes(t.agent) || t.total === 0) return false;
 
-        const agentMatch = selectedAgent === 'Todos' || t.agent === selectedAgent;
+        const agentMatch = !excludedAgents.includes(t.agent);
         const sectorMatch = selectedSector === 'Todos' || t.sector === selectedSector;
         const searchMatch = !searchQuery || 
           t.user.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -1184,11 +1187,55 @@ export default function App() {
         <div className="sidebar-section">
           <span className="sidebar-label">Filtros Globais</span>
           <div className="filter-group">
-            <div className="filter-label">Atendente</div>
-            <select className="custom-select" value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)}>
-              <option value="Todos">Todos os Agentes</option>
-              {rawData.agents.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <div className="filter-label" style={{ margin: 0 }}>Atendentes Exibidos</div>
+              <button 
+                onClick={() => setIsAgentFilterOpen(!isAgentFilterOpen)} 
+                style={{ background: 'transparent', border: 'none', color: 'var(--brand-red)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+              >
+                {isAgentFilterOpen ? 'Recolher' : 'Expandir'}
+              </button>
+            </div>
+            
+            {isAgentFilterOpen && (
+              <div style={{ background: 'rgba(0,0,0,0.15)', borderRadius: '8px', border: '1px solid var(--border-dim)', padding: '0.6rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '180px', overflowY: 'auto', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.2rem' }}>
+                  <button 
+                    onClick={() => setExcludedAgents([])} 
+                    style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-dim)', borderRadius: '4px', color: 'white', fontSize: '0.6rem', fontWeight: 700, padding: '3px 0', cursor: 'pointer' }}
+                  >
+                    Marcar Todos
+                  </button>
+                  <button 
+                    onClick={() => setExcludedAgents(rawData.agents)} 
+                    style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-dim)', borderRadius: '4px', color: 'white', fontSize: '0.6rem', fontWeight: 700, padding: '3px 0', cursor: 'pointer' }}
+                  >
+                    Limpar Todos
+                  </button>
+                </div>
+                
+                {rawData.agents.map(agent => {
+                  const isChecked = !excludedAgents.includes(agent);
+                  return (
+                    <label key={agent} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: isChecked ? 'white' : 'var(--text-dim)', cursor: 'pointer', fontWeight: isChecked ? 600 : 400, userSelect: 'none' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked} 
+                        onChange={() => {
+                          if (isChecked) {
+                            setExcludedAgents([...excludedAgents, agent]);
+                          } else {
+                            setExcludedAgents(excludedAgents.filter(a => a !== agent));
+                          }
+                        }} 
+                        style={{ accentColor: 'var(--brand-red)', cursor: 'pointer' }}
+                      />
+                      {agent}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
           </div>
           <div className="filter-group">
             <div className="filter-label">Setor / Serviço</div>
@@ -1465,9 +1512,20 @@ export default function App() {
                         </div>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
-                        {openTickets.slice(0, 2).map((ticket, i) => (
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'row', 
+                        gap: '0.85rem', 
+                        overflowX: 'auto', 
+                        paddingBottom: '0.65rem',
+                        scrollBehavior: 'smooth',
+                        WebkitOverflowScrolling: 'touch',
+                        flex: 1
+                      }} className="custom-horizontal-scrollbar">
+                        {openTickets.map((ticket, i) => (
                           <div key={i} style={{
+                            flex: '0 0 calc(50% - 0.425rem)',
+                            minWidth: '280px',
                             borderLeft: '4px solid var(--brand-red)',
                             padding: '0.75rem 0.85rem',
                             background: 'rgba(255, 255, 255, 0.01)',
@@ -1476,6 +1534,7 @@ export default function App() {
                             borderRadius: '8px',
                             display: 'flex',
                             flexDirection: 'column',
+                            justifyContent: 'space-between',
                             gap: '0.5rem',
                             fontSize: '0.75rem'
                           }}>
@@ -1519,9 +1578,9 @@ export default function App() {
                             </div>
 
                             {/* Ticket Title & User */}
-                            <div>
-                              <div style={{ fontWeight: 700, color: 'white' }}>{ticket.user}</div>
-                              <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.1rem', textTransform: 'uppercase' }}>
+                            <div style={{ margin: '0.2rem 0' }}>
+                              <div style={{ fontWeight: 700, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ticket.user}</div>
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.1rem', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {ticket.company} • {ticket.sector}
                               </div>
                             </div>
@@ -1535,7 +1594,7 @@ export default function App() {
                               alignItems: 'center',
                               fontSize: '0.7rem'
                             }}>
-                              <span style={{ color: 'var(--text-secondary)' }}>
+                              <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
                                 Atendente: <strong style={{ color: 'white' }}>{ticket.agent}</strong>
                               </span>
                               {ticket.wait > 0 && (
