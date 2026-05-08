@@ -80,29 +80,29 @@ def fetch_active_supports(token):
     data = response.json()
     return data.get('data', [])
 
-def fetch_tickets(token, days=30):
-    start_dt = datetime.now() - timedelta(days=days)
-    date_initial = start_dt.strftime("%Y-%m-%d")
-    date_finish = datetime.now().strftime("%Y-%m-%d")
-    
-    print(f"Buscando chamados de {date_initial} até {date_finish}...")
+def fetch_tickets_range(token, start_date, end_date):
     url = f"{BASE_URL}/report/generateFull"
     payload = {
         "sectors": [],
         "users": [],
-        "dateInitial": date_initial,
-        "dateFinish": date_finish
+        "dateInitial": start_date,
+        "dateFinish": end_date
     }
     headers = {
         'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0',
         'Authorization': f"Bearer {token}"
     }
-    
-    response = requests.post(url, json=payload, headers=headers, timeout=30)
+    response = requests.post(url, json=payload, headers=headers, timeout=45)
     response.raise_for_status()
-    
-    tickets = response.json()
+    return response.json()
+
+def fetch_tickets(token, days=60):
+    start_dt = datetime.now() - timedelta(days=days)
+    date_initial = start_dt.strftime("%Y-%m-%d")
+    date_finish = datetime.now().strftime("%Y-%m-%d")
+    print(f"Buscando chamados de {date_initial} até {date_finish}...")
+    tickets = fetch_tickets_range(token, date_initial, date_finish)
     print(f"{len(tickets)} chamados retornados pela API.")
     return tickets
 
@@ -118,20 +118,7 @@ def parse_iso_datetime(s):
 
 def process_sync():
     try:
-        # 1. Authenticate and fetch API data
-        token = get_token()
-        ratings_map = get_ratings(token)
-        api_tickets = fetch_tickets(token, days=30)
-        
-        # Fetch active live queue (unassigned / open tickets)
-        try:
-            active_tickets = fetch_active_supports(token)
-            print(f"Sucesso: {len(active_tickets)} chamados da fila ativa recebidos.")
-            api_tickets.extend(active_tickets)
-        except Exception as e:
-            print(f"Aviso: Falha ao buscar chamados em tempo real (/supports): {e}")
-        
-        # 2. Load existing data
+        # 1. Load existing data first to evaluate if we need backfill
         existing_data = {"tickets": [], "agents": [], "sectors": []}
         if os.path.exists(DATA_FILE_PATH):
             try:
@@ -140,6 +127,56 @@ def process_sync():
                 print(f"Carregados {len(existing_data.get('tickets', []))} registros históricos.")
             except Exception as e:
                 print(f"Aviso: Não foi possível carregar dados existentes ({e}). Iniciando do zero.")
+
+        # 2. Authenticate and get CSAT ratings map
+        token = get_token()
+        ratings_map = get_ratings(token)
+        
+        # Check if we need a historical backfill (from July 1, 2025 onwards)
+        # We need it if data.json is empty or doesn't contain older records from July/August 2025
+        needs_backfill = True
+        tickets = existing_data.get('tickets', [])
+        if len(tickets) > 3000:
+            has_old_tickets = any(t.get('date', '').startswith('2025-07') or t.get('date', '').startswith('2025-08') for t in tickets)
+            if has_old_tickets:
+                needs_backfill = False
+                
+        api_tickets = []
+        if needs_backfill:
+            print("=== ATENÇÃO: Banco de dados histórico incompleto. Iniciando BACKFILL AUTOMÁTICO desde 01/07/2025 ===")
+            intervals = [
+                ("2025-07-01", "2025-08-01"),
+                ("2025-08-01", "2025-09-01"),
+                ("2025-09-01", "2025-10-01"),
+                ("2025-10-01", "2025-11-01"),
+                ("2025-11-01", "2025-12-01"),
+                ("2025-12-01", "2026-01-01"),
+                ("2026-01-01", "2026-02-01"),
+                ("2026-02-01", "2026-03-01"),
+                ("2026-03-01", "2026-04-01"),
+                ("2026-04-01", "2026-05-01"),
+                ("2026-05-01", datetime.now().strftime("%Y-%m-%d"))
+            ]
+            for start, end in intervals:
+                print(f"Buscando intervalo histórico: {start} até {end}...")
+                try:
+                    chunk = fetch_tickets_range(token, start, end)
+                    print(f"  -> Sucesso: {len(chunk)} chamados recebidos.")
+                    api_tickets.extend(chunk)
+                except Exception as e:
+                    print(f"  -> Erro ao buscar intervalo {start} - {end}: {e}")
+            print("=== BACKFILL HISTÓRICO AUTOMÁTICO CONCLUÍDO COM SUCESSO! ===")
+        else:
+            # Normal operations: sliding 60-day window
+            api_tickets = fetch_tickets(token, days=60)
+            
+        # Fetch active live queue (unassigned / open tickets)
+        try:
+            active_tickets = fetch_active_supports(token)
+            print(f"Sucesso: {len(active_tickets)} chamados da fila ativa recebidos.")
+            api_tickets.extend(active_tickets)
+        except Exception as e:
+            print(f"Aviso: Falha ao buscar chamados em tempo real (/supports): {e}")
 
         # Build map of existing tickets to allow in-place updates of open tickets
         tickets_map = {int(t['id']): t for t in existing_data.get('tickets', []) if 'id' in t}
