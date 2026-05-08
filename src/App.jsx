@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { AlertCircle, BarChart2, Calendar, CheckCircle2, Clock, Diamond, Download, Filter, Folder, Info, LayoutGrid, List, MapPin, Menu, Monitor, Moon, PieChart, RefreshCcw as SyncIcon, Search, Sun, Ticket, TrendingUp, Trophy, Tv, Users, X, Zap } from 'lucide-react';
+import { AlertCircle, BarChart2, Calendar, CheckCircle2, Clock, Diamond, Download, FileText, Filter, Folder, Info, LayoutGrid, List, MapPin, Menu, Monitor, Moon, PieChart, RefreshCcw as SyncIcon, Search, Sun, Terminal, Ticket, TrendingUp, Trophy, Tv, Users, X, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart, 
@@ -947,6 +947,21 @@ export default function App() {
     return { emAtendimento, naFila };
   }, [openTickets]);
 
+  // Split openTickets into Suporte and Cadastro
+  const { suporteTickets, cadastroTickets } = useMemo(() => {
+    const suporteTickets = [];
+    const cadastroTickets = [];
+    openTickets.forEach(t => {
+      const sectorLower = (t.sector || '').toLowerCase();
+      if (sectorLower.includes('cadastro')) {
+        cadastroTickets.push(t);
+      } else {
+        suporteTickets.push(t);
+      }
+    });
+    return { suporteTickets, cadastroTickets };
+  }, [openTickets]);
+
   // Operational Metrics: Calculate today's real-time productivity aggregates (Brasília/Fortaleza Time)
   const dailyAgentMetrics = useMemo(() => {
     const todayStr = new Date().toLocaleDateString('pt-BR', {
@@ -1523,7 +1538,7 @@ export default function App() {
                   gap: '1.5rem',
                   alignItems: 'stretch'
                 }}>
-                  {/* COLUNA ESQUERDA: ÚLTIMOS CHAMADOS EM ABERTO */}
+                  {/* COLUNA ESQUERDA 1: CHAMADOS SUPORTE */}
                   <div className="card" style={{
                     background: 'var(--bg-card)',
                     border: '1px solid var(--border-dim)',
@@ -1542,13 +1557,23 @@ export default function App() {
                       letterSpacing: '0.05em',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px'
+                      justifyContent: 'space-between'
                     }}>
-                      <Clock size={12} color="var(--brand-red)" />
-                      Últimos Chamados em Aberto
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Terminal size={14} color="var(--brand-red)" />
+                        💻 Chamados Suporte
+                      </div>
+                      <span style={{
+                        background: 'rgba(218, 13, 23, 0.15)',
+                        color: 'var(--brand-red)',
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        fontSize: '0.65rem',
+                        fontWeight: 800
+                      }}>{suporteTickets.length}</span>
                     </div>
 
-                    {openTickets.length === 0 ? (
+                    {suporteTickets.length === 0 ? (
                       <div style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -1562,11 +1587,10 @@ export default function App() {
                         flex: 1
                       }}>
                         <div style={{ background: 'rgba(79, 112, 67, 0.12)', padding: '10px', borderRadius: '50%' }}>
-                          <CheckCircle2 size={24} color="var(--brand-green)" />
+                          <CheckCircle2 size={20} color="var(--brand-green)" />
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'white' }}>NENHUM CHAMADO EM ABERTO</div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>Fila limpa! Todos os atendimentos concluídos.</div>
+                          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>SEM SUPORTE EM ABERTO</div>
                         </div>
                       </div>
                     ) : (
@@ -1581,7 +1605,7 @@ export default function App() {
                         WebkitOverflowScrolling: 'touch',
                         flex: 1
                       }} className="custom-vertical-scrollbar">
-                        {openTickets.map((ticket, i) => (
+                        {suporteTickets.map((ticket, i) => (
                           <div key={i} style={{
                             borderLeft: '4px solid var(--brand-red)',
                             padding: '0.75rem 0.85rem',
@@ -1611,8 +1635,8 @@ export default function App() {
                                   #{ticket.id}
                                 </span>
                                 <span style={{
-                                  background: 'rgba(218, 85, 19, 0.1)',
-                                  color: 'var(--brand-orange)',
+                                  background: ticket.status === 'Em atendimento' ? 'rgba(38, 93, 124, 0.15)' : 'rgba(218, 85, 19, 0.15)',
+                                  color: ticket.status === 'Em atendimento' ? 'var(--brand-blue)' : 'var(--brand-orange)',
                                   padding: '2px 6px',
                                   borderRadius: '4px',
                                   fontSize: '0.6rem',
@@ -1631,6 +1655,159 @@ export default function App() {
                                 gap: '4px'
                               }}>
                                 <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--brand-red)', display: 'inline-block' }} className="animate-pulse"></span>
+                                {getElapsedTime(ticket.created_at)}
+                              </span>
+                            </div>
+
+                            {/* Ticket Title & User */}
+                            <div style={{ margin: '0.2rem 0' }}>
+                              <div style={{ fontWeight: 700, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ticket.user}</div>
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', marginTop: '0.1rem', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {ticket.company} • {ticket.sector}
+                              </div>
+                            </div>
+
+                            {/* Footer row */}
+                            <div style={{
+                              borderTop: '1px solid var(--border-dim)',
+                              paddingTop: '0.5rem',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              fontSize: '0.7rem'
+                            }}>
+                              <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                                Atendente: <strong style={{ color: 'white' }}>{ticket.agent}</strong>
+                              </span>
+                              {ticket.wait > 0 && (
+                                <span style={{ color: 'var(--brand-orange)', fontWeight: 700 }}>
+                                  Fila: {formatTime(ticket.wait)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* COLUNA ESQUERDA 2: CHAMADOS CADASTRO */}
+                  <div className="card" style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-dim)',
+                    borderRadius: '12px',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                    justifyContent: 'flex-start'
+                  }}>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      color: 'var(--text-dim)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FileText size={14} color="var(--brand-orange)" />
+                        📝 Chamados Cadastro
+                      </div>
+                      <span style={{
+                        background: 'rgba(218, 85, 19, 0.15)',
+                        color: 'var(--brand-orange)',
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        fontSize: '0.65rem',
+                        fontWeight: 800
+                      }}>{cadastroTickets.length}</span>
+                    </div>
+
+                    {cadastroTickets.length === 0 ? (
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.75rem',
+                        padding: '2.5rem 1rem',
+                        border: '1.5px dashed rgba(79, 112, 67, 0.3)',
+                        borderRadius: '8px',
+                        background: 'rgba(79, 112, 67, 0.02)',
+                        flex: 1
+                      }}>
+                        <div style={{ background: 'rgba(79, 112, 67, 0.12)', padding: '10px', borderRadius: '50%' }}>
+                          <CheckCircle2 size={20} color="var(--brand-green)" />
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'white' }}>SEM CADASTRO EM ABERTO</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '0.75rem', 
+                        maxHeight: '235px',
+                        overflowY: 'auto', 
+                        paddingRight: '0.25rem',
+                        scrollBehavior: 'smooth',
+                        WebkitOverflowScrolling: 'touch',
+                        flex: 1
+                      }} className="custom-vertical-scrollbar">
+                        {cadastroTickets.map((ticket, i) => (
+                          <div key={i} style={{
+                            borderLeft: '4px solid var(--brand-orange)',
+                            padding: '0.75rem 0.85rem',
+                            background: 'rgba(255, 255, 255, 0.01)',
+                            border: '1px solid var(--border-dim)',
+                            borderLeftWidth: '4px',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            gap: '0.5rem',
+                            fontSize: '0.75rem',
+                            width: '100%'
+                          }}>
+                            {/* Header row */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{
+                                  background: 'rgba(218, 85, 19, 0.1)',
+                                  color: 'var(--brand-orange)',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 800,
+                                  fontFamily: 'JetBrains Mono, monospace'
+                                }}>
+                                  #{ticket.id}
+                                </span>
+                                <span style={{
+                                  background: ticket.status === 'Em atendimento' ? 'rgba(38, 93, 124, 0.15)' : 'rgba(218, 85, 19, 0.15)',
+                                  color: ticket.status === 'Em atendimento' ? 'var(--brand-blue)' : 'var(--brand-orange)',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.6rem',
+                                  fontWeight: 800,
+                                  textTransform: 'uppercase'
+                                }}>
+                                  {ticket.status}
+                                </span>
+                              </div>
+                              <span style={{
+                                fontSize: '0.65rem',
+                                color: 'var(--brand-orange)',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}>
+                                <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--brand-orange)', display: 'inline-block' }} className="animate-pulse"></span>
                                 {getElapsedTime(ticket.created_at)}
                               </span>
                             </div>

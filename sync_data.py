@@ -68,6 +68,18 @@ def get_ratings(token):
             
     return ratings_map
 
+def fetch_active_supports(token):
+    print("Buscando chamados ativos adicionais (GET /supports)...")
+    url = f"{BASE_URL}/supports"
+    headers = {
+        'User-Agent': 'Mozilla/5.0',
+        'Authorization': f"Bearer {token}"
+    }
+    response = requests.get(url, headers=headers, timeout=20)
+    response.raise_for_status()
+    data = response.json()
+    return data.get('data', [])
+
 def fetch_tickets(token, days=30):
     start_dt = datetime.now() - timedelta(days=days)
     date_initial = start_dt.strftime("%Y-%m-%d")
@@ -110,6 +122,14 @@ def process_sync():
         token = get_token()
         ratings_map = get_ratings(token)
         api_tickets = fetch_tickets(token, days=30)
+        
+        # Fetch active live queue (unassigned / open tickets)
+        try:
+            active_tickets = fetch_active_supports(token)
+            print(f"Sucesso: {len(active_tickets)} chamados da fila ativa recebidos.")
+            api_tickets.extend(active_tickets)
+        except Exception as e:
+            print(f"Aviso: Falha ao buscar chamados em tempo real (/supports): {e}")
         
         # 2. Load existing data
         existing_data = {"tickets": [], "agents": [], "sectors": []}
