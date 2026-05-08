@@ -714,13 +714,13 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 /* Centered presentation layout */
 .is-tv-mode .tv-slide {
-  position: absolute !important;
+  position: fixed !important;
   top: 50% !important;
   left: 50% !important;
   width: 1920px !important;
   height: 1080px !important;
-  margin-top: -540px !important;
-  margin-left: -960px !important;
+  transform-origin: center center !important;
+  margin: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
@@ -782,15 +782,15 @@ input:checked + .slider:before { transform: translateX(16px); }
 }
 
 /* Card Subtitles and Counts */
-.is-tv-mode .card div[style*="font-size"],
-.is-tv-mode .card div[style*="fontSize"] {
+.is-tv-mode .kpi-grid .card div[style*="font-size"],
+.is-tv-mode .kpi-grid .card div[style*="fontSize"] {
   font-size: 0.9rem !important;
   color: var(--text-dim) !important;
 }
 
 /* Bigger badges for growth compared to previous month */
-.is-tv-mode .card div[style*="font-family"],
-.is-tv-mode .card div[style*="fontFamily"] {
+.is-tv-mode .kpi-grid .card div[style*="font-family"],
+.is-tv-mode .kpi-grid .card div[style*="fontFamily"] {
   font-size: 0.85rem !important;
   padding: 3px 8px !important;
   border-radius: 6px !important;

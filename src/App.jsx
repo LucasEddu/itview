@@ -1384,7 +1384,7 @@ export default function App() {
             </div>
 
                          {(!isTvMode || tvSlideIndex === 0) && (
-<div className="tv-slide animate-fade" style={isTvMode ? { transform: `scale(${tvScale})` } : {}}>
+<div className="tv-slide animate-fade" style={isTvMode ? { transform: `translate(-50%, -50%) scale(${tvScale})` } : {}}>
 {/* SECTION 0: VISÃO GERAL */}
              <div className="section-header">
                 <div className="section-prefix">
@@ -1555,7 +1555,7 @@ export default function App() {
                            <section className="section-anchor">
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+                  gridTemplateColumns: isTvMode ? '1fr 1fr 1.2fr' : 'repeat(auto-fit, minmax(350px, 1fr))',
                   gap: '1.5rem',
                   alignItems: 'stretch'
                 }}>
@@ -2006,7 +2006,7 @@ export default function App() {
             </div>
 )}
 {(!isTvMode || tvSlideIndex === 1) && (
-<div className="tv-slide animate-fade" style={isTvMode ? { transform: `scale(${tvScale})` } : {}}>
+<div className="tv-slide animate-fade" style={isTvMode ? { transform: `translate(-50%, -50%) scale(${tvScale})` } : {}}>
 {/* SECTION 1: VOLUME POR CHAMADOS */}
             <div className="section-header" style={{ borderTop: '1px solid var(--border-dim)', paddingTop: '2.5rem' }}>
                <div className="section-prefix">
@@ -2132,7 +2132,7 @@ export default function App() {
             </div>
 )}
 {(!isTvMode || tvSlideIndex === 2) && (
-<div className="tv-slide animate-fade" style={isTvMode ? { transform: `scale(${tvScale})` } : {}}>
+<div className="tv-slide animate-fade" style={isTvMode ? { transform: `translate(-50%, -50%) scale(${tvScale})` } : {}}>
 {/* SECTION 2: SATISFAÇÃO & SLA */}
             <div className="section-header" style={{ borderTop: '1px solid var(--border-dim)', paddingTop: '2.5rem' }}>
                <div className="section-prefix">
@@ -2270,7 +2270,7 @@ export default function App() {
                         </div>
 )}
 {(!isTvMode || tvSlideIndex === 3) && (
-<div className="tv-slide animate-fade" style={isTvMode ? { transform: `scale(${tvScale})` } : {}}>
+<div className="tv-slide animate-fade" style={isTvMode ? { transform: `translate(-50%, -50%) scale(${tvScale})` } : {}}>
 {/* SECTION 3: CHAMADOS POR USUÁRIO */}
             <div className="section-header" style={{ borderTop: '1px solid var(--border-dim)', paddingTop: '2.5rem' }}>
                <div className="section-prefix">
