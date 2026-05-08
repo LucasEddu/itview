@@ -412,7 +412,11 @@ export default function App() {
 
     const total = userTickets.length;
     const avgWait = userTickets.reduce((acc, t) => acc + t.wait, 0) / (total || 1);
-    const avgTotal = userTickets.reduce((acc, t) => acc + t.total, 0) / (total || 1);
+    
+    // Filter tickets that actually have a valid duration (t.total > 0) AND are not extraordinary (t.total <= 3600)
+    const tmaTickets = userTickets.filter(t => t.total > 0 && t.total <= 3600);
+    const sumTotal = tmaTickets.reduce((acc, t) => acc + t.total, 0);
+    const avgTotal = tmaTickets.length > 0 ? (sumTotal / tmaTickets.length) : 0;
 
     const csatWeights = { 'Muito Satisfeito': 100, 'Satisfeito': 75, 'Indiferente': 50, 'Insatisfeito': 25 };
     const rated = userTickets.filter(t => t.csat && csatWeights[t.csat] !== undefined);
@@ -570,7 +574,11 @@ export default function App() {
   const metrics = useMemo(() => {
     const total = filteredTickets.length;
     const avgWait = filteredTickets.reduce((acc, t) => acc + t.wait, 0) / (total || 1);
-    const avgTotal = filteredTickets.reduce((acc, t) => acc + t.total, 0) / (total || 1);
+    
+    // Filter tickets that actually have a valid duration (t.total > 0) AND are not extraordinary (t.total <= 3600)
+    const tmaTickets = filteredTickets.filter(t => t.total > 0 && t.total <= 3600);
+    const sumTotal = tmaTickets.reduce((acc, t) => acc + t.total, 0);
+    const avgTotal = tmaTickets.length > 0 ? (sumTotal / tmaTickets.length) : 0;
 
     // CSAT Global (Para filtros aplicados usando Média Ponderada)
     const csatWeights = {
@@ -669,8 +677,13 @@ export default function App() {
       const total = ticketsList.length;
       if (total === 0) return { total: 0, avgTotal: 0, avgWait: 0, csatScore: 0 };
 
-      const sumTotal = ticketsList.reduce((acc, t) => acc + t.total, 0);
+      // Apply the same 1 hour filter for resolution time
+      const tmaTickets = ticketsList.filter(t => t.total > 0 && t.total <= 3600);
+      const sumTotal = tmaTickets.reduce((acc, t) => acc + t.total, 0);
+      const avgTotal = tmaTickets.length > 0 ? (sumTotal / tmaTickets.length) : 0;
+
       const sumWait = ticketsList.reduce((acc, t) => acc + t.wait, 0);
+      const avgWait = sumWait / (total || 1);
 
       const csatWeights = { 'Muito Satisfeito': 100, 'Satisfeito': 75, 'Indiferente': 50, 'Insatisfeito': 25 };
       const rated = ticketsList.filter(t => t.csat && csatWeights[t.csat] !== undefined);
@@ -678,8 +691,8 @@ export default function App() {
 
       return {
         total,
-        avgTotal: sumTotal / total,
-        avgWait: sumWait / total,
+        avgTotal,
+        avgWait,
         csatScore: rated.length > 0 ? sumCsat / rated.length : 0
       };
     };
@@ -849,6 +862,9 @@ export default function App() {
 
   const avgTimeByAgent = useMemo(() => {
     const totals = filteredTickets.reduce((acc, t) => {
+      // Exclude tickets where total is 0 (open) or > 3600 (extraordinary)
+      if (t.total === 0 || t.total > 3600) return acc;
+      
       if (!acc[t.agent]) acc[t.agent] = { sum: 0, count: 0 };
       acc[t.agent].sum += t.total;
       acc[t.agent].count++;
@@ -864,9 +880,14 @@ export default function App() {
   const evolution = useMemo(() => {
     const dataByMonth = filteredTickets.reduce((acc, t) => {
       if (!t.month) return acc;
-      if (!acc[t.month]) acc[t.month] = { count: 0, time: 0, csatSum: 0, csatRated: 0 };
+      if (!acc[t.month]) acc[t.month] = { count: 0, tmaCount: 0, tmaTime: 0, csatSum: 0, csatRated: 0 };
       acc[t.month].count++;
-      acc[t.month].time += t.total;
+      
+      // Only include valid, non-extraordinary tickets in TMA calculations
+      if (t.total > 0 && t.total <= 3600) {
+        acc[t.month].tmaCount++;
+        acc[t.month].tmaTime += t.total;
+      }
       
       const score = CSAT_WEIGHTS[t.csat];
       if (score !== undefined) {
@@ -881,7 +902,7 @@ export default function App() {
       .map(([month, d]) => ({ 
         month: formatMonthKey(month), 
         volume: d.count, 
-        time: Math.round((d.time / d.count) / 60),
+        time: d.tmaCount > 0 ? Math.round((d.tmaTime / d.tmaCount) / 60) : 0,
         csat: d.csatRated > 0 ? parseFloat((d.csatSum / d.csatRated).toFixed(1)) : 0
       }));
   }, [filteredTickets]);
