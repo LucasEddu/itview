@@ -174,7 +174,19 @@ def process_sync():
         try:
             active_tickets = fetch_active_supports(token)
             print(f"Sucesso: {len(active_tickets)} chamados da fila ativa recebidos.")
+            if active_tickets:
+                print("DEBUG: Checking first 5 active tickets for Sector...")
+
+                for i in range(min(5, len(active_tickets))):
+                    at = active_tickets[i]
+                    print(f"  - Active Ticket {at.get('id')} Sector: {type(at.get('Sector'))}")
+                    if at.get('Sector'):
+                        print("SAMPLE ACTIVE TICKET WITH SECTOR:")
+                        print(json.dumps(at, indent=2))
+                        break
             api_tickets.extend(active_tickets)
+
+
         except Exception as e:
             print(f"Aviso: Falha ao buscar chamados em tempo real (/supports): {e}")
 
@@ -189,6 +201,8 @@ def process_sync():
             ticket_id = int(t.get('id', 0))
             if ticket_id == 0:
                 continue
+
+
                 
             status_obj = t.get('Status')
             status_name = status_obj.get('name', 'Finalizado') if status_obj else 'Finalizado'
@@ -197,18 +211,37 @@ def process_sync():
             user_obj = t.get('User')
             agent = str(user_obj.get('name', 'Não Atribuído')).strip().title() if user_obj else 'Não Atribuído'
             
-            # Skip system/unassigned messages for standard KPIs (but keep them if they are open for real-time tracking)
-            # Wait, the frontend App.jsx filters out 'Não Atribuído' / 'Sistema' or total=0 for standard charts.
-            # So we can keep them in tickets list for our open-tickets view, but make sure we map them!
             if agent in ['', 'Nan']:
                 agent = 'Não Atribuído'
                 
-            sector_obj = t.get('Sector')
+            sector_obj = t.get('Sector', {})
             sector = sector_obj.get('name', 'Não Informado') if sector_obj else 'Não Informado'
+            sector_id = sector_obj.get('id', 0) if sector_obj else 0
             
-            contact_obj = t.get('Contact')
+            # Get Parent Sector Code (URA Selector)
+            parent_code = ""
+            if sector_obj and isinstance(sector_obj, dict):
+                parent_obj = sector_obj.get('parent')
+                if parent_obj and isinstance(parent_obj, dict):
+                    parent_code = str(parent_obj.get('code', '') or '')
+            
+            # Fallback Mapping based on URA configuration (Sector 1 and 2)
+            if not parent_code and sector:
+                s_lower = sector.lower()
+                # Sector 2: CADASTRO (based on URA options 21-35)
+                if any(x in s_lower for x in ['cadastro', 'importação de notas']):
+                    parent_code = '2'
+                # Sector 1: SUPORTE (based on URA options 111-141 and typical technical terms)
+                elif any(x in s_lower for x in ['problema', 'erro', 'máquinas', 'internet', 'totem', 'vpn', 'suporte técnico', 'acesso', 'pcp', 'trílogo']):
+                    parent_code = '1'
+
+
+            
+            contact_obj = t.get('Contact', {})
             company = str(contact_obj.get('company', 'N/A')).strip().upper() if contact_obj else 'N/A'
             contact_name = str(contact_obj.get('name', 'Desconhecido')).strip().title() if contact_obj else 'Desconhecido'
+
+
             
             if company in ['', 'NAN']:
                 company = 'N/A'
@@ -241,10 +274,12 @@ def process_sync():
             weekday = -1
             
             if created_at:
-                date_str = created_at.strftime('%Y-%m-%d')
-                month_str = created_at.strftime('%Y-%m')
-                hour = created_at.hour
-                weekday = created_at.weekday()
+                # Adjust UTC timezone to Brasilia timezone (UTC-3)
+                created_at_br = created_at - timedelta(hours=3)
+                date_str = created_at_br.strftime('%Y-%m-%d')
+                month_str = created_at_br.strftime('%Y-%m')
+                hour = created_at_br.hour
+                weekday = created_at_br.weekday()
                 
             # Categorize based on Sector
             sector_upper = sector.upper()
@@ -264,7 +299,11 @@ def process_sync():
                 "id": ticket_id,
                 "agent": agent,
                 "sector": sector,
+                "sector_id": sector_id,
+                "parent_code": parent_code,
                 "main_category": main_category,
+
+
                 "company": company,
                 "user": contact_name,
                 "wait": wait_seconds,

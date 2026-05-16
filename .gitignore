@@ -38,3 +38,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .history/
+scratch/
+*_cache.json
+*_result.json
+stores_locations.json
+swagger.json
+brandbook_text.txt

@@ -22,7 +22,7 @@ Dashboard interativo para gestão e análise de chamados técnicos, integrado ao
 1. Instale as dependências:
    ```bash
    npm install
-   pip install playwright pandas openpyxl python-dotenv
+   pip install requests playwright pandas openpyxl python-dotenv
    python -m playwright install chromium
    ```
 2. Configure o arquivo `.env`:

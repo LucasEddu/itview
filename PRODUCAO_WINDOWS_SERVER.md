@@ -22,7 +22,7 @@ Graças ao empacotamento que configuramos, **toda a aplicação roda em um únic
    npm install --production
 
    # Instalar dependências do Python
-   pip install pandas openpyxl playwright python-dotenv
+   pip install requests pandas openpyxl playwright python-dotenv
 
    # Instalar o navegador Chromium para o robô de sincronização
    python -m playwright install chromium
